@@ -1,0 +1,27 @@
+CompileFlags:
+  Add:
+    - "-isystemC:/Users/prati/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include"
+    - "-isystemC:/Users/prati/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0"
+    - "-isystemC:/Users/prati/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0/xtensa-esp32-elf"
+    - "-isystemC:/Users/prati/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include/c++/8.4.0/backward"
+    - "-isystemC:/Users/prati/.platformio/packages/toolchain-xtensa-esp32/lib/gcc/xtensa-esp32-elf/8.4.0/include"
+    - "-isystemC:/Users/prati/.platformio/packages/toolchain-xtensa-esp32/lib/gcc/xtensa-esp32-elf/8.4.0/include-fixed"
+    - "-isystemC:/Users/prati/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/sys-include"
+    - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/LiquidCrystal_I2C"
+    - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/DHT sensor library"
+    - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/Adafruit Unified Sensor"
+    - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/Blynk/src"
+    - "-Wno-unknown-warning-option"
+    - "-Wno-unused-command-line-argument"
+  Remove:
+    - "-mlongcalls"
+    - "-fstrict-volatile-bitfields"
+    - "-fno-tree-switch-conversion"
+    - "-fno-jump-tables"
+    - "-MMD"
+
+Diagnostics:
+  Suppress:
+    - "drv_unknown_argument"
+    - "unknown_argument"
+    - "-Wunused-command-line-argument"

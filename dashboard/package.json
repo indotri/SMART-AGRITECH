@@ -1,0 +1,14 @@
+{
+  "name": "hidro-iot-dashboard",
+  "version": "1.0.0",
+  "description": "Phosphor-terminal real-time IoT Hydroponic Dashboard powered by Node.js and Socket.IO",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
