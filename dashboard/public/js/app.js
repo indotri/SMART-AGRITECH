@@ -732,4 +732,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadExcelRecords();
   setInterval(loadExcelRecords, 8000);
+
+  // Mobile Bottom Navigation active state tracking
+  const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+  if (mobileNavItems.length > 0) {
+    mobileNavItems.forEach(item => {
+      item.addEventListener('click', () => {
+        mobileNavItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+
+    const sectionIds = ['overview', 'telemetry', 'actuators', 'chart-section', 'records-section', 'terminal-section'];
+    const sections = sectionIds.map(id => document.getElementById(id)).filter(Boolean);
+    window.addEventListener('scroll', () => {
+      let currentSection = '';
+      const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 120;
+        const height = sec.offsetHeight;
+        if (scrollPos >= top && scrollPos < top + height) {
+          currentSection = sec.getAttribute('id');
+        }
+      });
+      if (currentSection) {
+        mobileNavItems.forEach(item => {
+          if (item.getAttribute('href') === `#${currentSection}`) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+    }, { passive: true });
+  }
 });

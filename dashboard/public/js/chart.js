@@ -15,7 +15,7 @@ class PhosphorChart {
     const rect = this.canvas.parentElement.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     this.width = rect.width;
-    this.height = 260;
+    this.height = window.innerWidth <= 640 ? 210 : 260;
     this.canvas.width = this.width * dpr;
     this.canvas.height = this.height * dpr;
     this.canvas.style.width = `${this.width}px`;
@@ -49,7 +49,10 @@ class PhosphorChart {
       return;
     }
 
-    const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+    const isMobile = window.innerWidth <= 640;
+    const padding = isMobile 
+      ? { top: 16, right: 12, bottom: 24, left: 32 }
+      : { top: 20, right: 20, bottom: 30, left: 40 };
     const chartW = w - padding.left - padding.right;
     const chartH = h - padding.top - padding.bottom;
 

@@ -906,28 +906,296 @@ canvas {
   color: var(--color-phosphor-white);
 }
 
-/* Responsive adjustments */
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: rgba(24, 24, 24, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--color-circuit-border);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 4px;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--color-sage-60);
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 6px 8px;
+  border-radius: 8px;
+  flex: 1;
+  text-align: center;
+  transition: all 200ms ease;
+  min-height: 48px;
+}
+
+.mobile-nav-item svg {
+  stroke: var(--color-sage-60);
+  transition: stroke 200ms ease;
+}
+
+.mobile-nav-item:hover,
+.mobile-nav-item.active {
+  color: var(--color-lime-pulse);
+}
+
+.mobile-nav-item:hover svg,
+.mobile-nav-item.active svg {
+  stroke: var(--color-lime-pulse);
+}
+
+/* Sections scroll margin for fixed navigation */
+section[id] {
+  scroll-margin-top: 76px;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints System (Desktop -> Tablet -> Mobile -> Small Mobile)
+   ========================================================================== */
+
+/* 1. Tablet Landscape & Small Desktops (<= 1024px) */
 @media (max-width: 1024px) {
   .grid-3col {
     grid-template-columns: 1fr;
+    gap: var(--spacing-20);
   }
   .control-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-20);
   }
   .hero-title {
-    font-size: 40px;
+    font-size: 42px;
   }
 }
 
+/* 2. Tablet Portrait & Mobile Landscape (<= 768px) */
 @media (max-width: 768px) {
+  body {
+    padding-bottom: 68px; /* space for mobile bottom nav */
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+  }
+
   .nav-links {
     display: none;
   }
+
+  .navbar {
+    padding: 0 14px;
+    height: 58px;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .nav-actions {
+    gap: 8px;
+  }
+
+  .nav-actions .tag-pill {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .container {
+    padding: 0 16px;
+  }
+
+  .section {
+    padding: var(--spacing-40) 0;
+  }
+
+  .hero-section {
+    padding-top: 90px;
+    padding-bottom: var(--spacing-32);
+  }
+
+  .hero-title {
+    font-size: clamp(26px, 6vw, 36px);
+    line-height: 1.15;
+    margin-bottom: var(--spacing-16);
+  }
+
+  .hero-subhead {
+    font-size: var(--text-body-sm);
+    line-height: var(--leading-body-sm);
+    margin-bottom: var(--spacing-24);
+  }
+
   .hero-actions {
     flex-direction: column;
+    width: 100%;
+    gap: 12px;
   }
+
+  .hero-actions .btn-accent-pill,
+  .hero-actions .btn-ghost-outline {
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 20px;
+    font-size: var(--text-body-sm);
+  }
+
+  .hero-visual-wrapper {
+    width: 220px;
+    height: 210px;
+    margin-top: var(--spacing-24);
+  }
+
+  .workload-card {
+    padding: var(--spacing-20);
+  }
+
+  .control-panel {
+    padding: var(--spacing-20);
+  }
+
+  .relay-status-display {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .relay-status-display button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .mode-switch-group {
+    width: 100%;
+    display: flex;
+  }
+
+  .mode-btn {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px;
+  }
+
+  .chart-container {
+    padding: 16px 12px;
+    margin-top: var(--spacing-20);
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .chart-legend {
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+  }
+
+  .canvas-wrapper {
+    height: 210px;
+  }
+
+  .code-window-card {
+    margin-top: var(--spacing-20);
+    border-radius: 10px;
+  }
+
+  .terminal-stream {
+    padding: 14px 12px;
+    font-size: 11px;
+    max-height: 220px;
+  }
+
   .footer-content {
     flex-direction: column;
     gap: var(--spacing-16);
+    text-align: center;
+  }
+}
+
+/* 3. Mobile Phones Portrait (<= 480px) */
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0 10px;
+  }
+
+  .brand-text {
+    font-size: 17px;
+  }
+
+  #backend-url-btn {
+    display: none; /* Disembunyikan di HP kecil agar tidak sesak */
+  }
+
+  .nav-actions .tag-pill {
+    padding: 3px 6px;
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+  }
+
+  .hero-title {
+    font-size: 26px;
+  }
+
+  .card-title {
+    font-size: 18px;
+  }
+
+  .card-value {
+    font-size: 32px;
+  }
+
+  .threshold-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .threshold-input-wrap {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .threshold-input {
+    width: 80px;
+    height: 38px;
+    font-size: 15px;
+  }
+
+  .btn-primary-filled,
+  .btn-accent-pill,
+  .btn-ghost-outline {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .terminal-line {
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
+    font-size: 11px;
   }
 }
