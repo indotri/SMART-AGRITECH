@@ -1,0 +1,14 @@
+# Vercel Ignore - Ignore backend & firmware files
+.pio/
+.cache/
+compile_commands.json
+src/
+examples/
+*.ini
+*.ino
+*.toml
+dashboard/package.json
+dashboard/package-lock.json
+dashboard/server.js
+dashboard/excelLogger.js
+dashboard/records/

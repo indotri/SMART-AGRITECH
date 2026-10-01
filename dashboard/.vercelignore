@@ -1,0 +1,6 @@
+# Vercel Ignore - Only deploy static frontend
+package.json
+package-lock.json
+server.js
+excelLogger.js
+records/
