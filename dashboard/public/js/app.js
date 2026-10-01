@@ -1,6 +1,5 @@
-// Frontend Application Logic
+// Frontend Application Logic & Hybrid Cloud Engine
 document.addEventListener('DOMContentLoaded', () => {
-  const socket = io();
   const chart = new PhosphorChart('telemetryCanvas');
 
   // DOM Elements
@@ -40,26 +39,51 @@ document.addEventListener('DOMContentLoaded', () => {
   const terminalStream = document.getElementById('terminal-stream');
   const simToggleBtn = document.getElementById('sim-toggle-btn');
   const simStateText = document.getElementById('sim-state-text');
+  const gatewayStatus = document.getElementById('gateway-status');
   const gatewayStatusText = document.getElementById('gateway-status-text');
+  const btnExportToday = document.getElementById('btn-export-today');
 
+  // Local State Store
   let currentPumpStatus = false;
   let currentMode = 'auto';
+  let thresholds = {
+    soilSafeLimit: 50,
+    soilCriticalLimit: 35,
+    airHumDryLimit: 60.0
+  };
+  let currentTelemetry = {
+    soilMoisture: 42,
+    airTemp: 28.4,
+    airHumidity: 58.2,
+    pumpStatus: false,
+    batteryVoltage: 12.6,
+    batteryPercent: 88,
+    solarVoltage: 18.2,
+    solarStatus: 'CHARGING',
+    timestamp: new Date().toISOString()
+  };
+
+  let isStandaloneDemo = false;
+  let clientSimInterval = null;
+  let simActive = true;
+  let simStep = 0;
 
   // Helper to render telemetry cards
   function updateTelemetryUI(data) {
     if (!data) return;
+    currentTelemetry = { ...currentTelemetry, ...data };
 
     // Soil Moisture
     const soil = Number(data.soilMoisture);
-    elSoil.textContent = isNaN(soil) ? '--' : soil;
+    elSoil.textContent = isNaN(soil) ? '--' : Math.round(soil);
     barSoil.style.width = `${Math.min(100, Math.max(0, soil))}%`;
 
-    if (soil < 35) {
+    if (soil < thresholds.soilCriticalLimit) {
       badgeSoil.textContent = 'CRITICAL DRY';
       badgeSoil.style.color = '#e54d2e';
       badgeSoil.style.borderColor = '#e54d2e';
       barSoil.style.backgroundColor = '#e54d2e';
-    } else if (soil < 50) {
+    } else if (soil < thresholds.soilSafeLimit) {
       badgeSoil.textContent = 'MODERATE DRY';
       badgeSoil.style.color = '#ffc53d';
       badgeSoil.style.borderColor = '#ffc53d';
@@ -75,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hum = Number(data.airHumidity);
     elHum.textContent = isNaN(hum) ? '--' : hum.toFixed(1);
     barHum.style.width = `${Math.min(100, Math.max(0, hum))}%`;
-    if (hum < 60) {
+    if (hum < thresholds.airHumDryLimit) {
       badgeHum.textContent = 'LOW / DRY';
       badgeHum.style.color = '#ffc53d';
     } else {
@@ -165,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function appendLogLine(log) {
     const line = document.createElement('div');
     line.className = 'terminal-line';
-    const isWarn = log.level === 'WARN' || log.level === 'CRIT';
+    const isWarn = log.level === 'WARN' || log.level === 'CRIT' || log.level === 'ALERT';
 
     line.innerHTML = `
       <span class="term-time">[${log.time}]</span>
@@ -174,87 +198,313 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     terminalStream.appendChild(line);
-    // Keep max 80 elements in DOM
     while (terminalStream.children.length > 80) {
       terminalStream.removeChild(terminalStream.firstChild);
     }
     terminalStream.scrollTop = terminalStream.scrollHeight;
   }
 
-  // Socket.IO Events
-  socket.on('connect', () => {
-    gatewayStatusText.textContent = 'SYSTEM LIVE';
-    document.getElementById('gateway-status').classList.remove('outline');
-    document.getElementById('gateway-status').classList.add('live-accent');
-  });
+  // ==========================================
+  // Hybrid Connection Setup (Local / Render / Vercel)
+  // ==========================================
+  const urlParams = new URLSearchParams(window.location.search);
+  const customBackend = urlParams.get('backend') || localStorage.getItem('hidro_backend_url');
+  const targetServer = customBackend || window.location.origin;
 
-  socket.on('disconnect', () => {
-    gatewayStatusText.textContent = 'DISCONNECTED';
-    document.getElementById('gateway-status').classList.add('outline');
-    document.getElementById('gateway-status').classList.remove('live-accent');
-  });
+  let socket = null;
+  let socketConnected = false;
 
-  socket.on('init', (payload) => {
-    if (payload.state) {
-      setModeUI(payload.state.mode);
-      updateTelemetryUI(payload.state.telemetry);
-      if (payload.state.thresholds) {
-        inpSoilSafe.value = payload.state.thresholds.soilSafeLimit;
-        inpSoilCrit.value = payload.state.thresholds.soilCriticalLimit;
-        inpAirDry.value = payload.state.thresholds.airHumDryLimit;
+  // Add Backend Switcher button to navigation bar
+  const navActions = document.querySelector('.nav-actions');
+  if (navActions) {
+    const backendBtn = document.createElement('button');
+    backendBtn.className = 'tag-pill outline';
+    backendBtn.id = 'backend-url-btn';
+    backendBtn.title = 'Sambungkan ke URL Server Backend (Render / VPS)';
+    backendBtn.style.cursor = 'pointer';
+    backendBtn.innerHTML = `SERVER: <span style="color:var(--color-lime-pulse)">${customBackend ? 'CLOUD' : 'AUTO'}</span>`;
+    backendBtn.addEventListener('click', () => {
+      const current = localStorage.getItem('hidro_backend_url') || '';
+      const input = prompt(
+        'Masukkan URL Backend Render (contoh: https://hidro-backend.onrender.com)\nAtau kosongkan untuk mode otomatis / simulasi lokal:',
+        current
+      );
+      if (input !== null) {
+        if (input.trim()) {
+          let cleanUrl = input.trim();
+          if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+            cleanUrl = 'https://' + cleanUrl;
+          }
+          localStorage.setItem('hidro_backend_url', cleanUrl);
+        } else {
+          localStorage.removeItem('hidro_backend_url');
+        }
+        window.location.reload();
       }
-      if (payload.state.simulationEnabled !== undefined) {
-        simStateText.textContent = payload.state.simulationEnabled ? 'ON' : 'OFF';
-        simStateText.style.color = payload.state.simulationEnabled ? 'var(--color-lime-pulse)' : 'var(--color-sage-40)';
+    });
+    navActions.prepend(backendBtn);
+  }
+
+  try {
+    if (typeof io !== 'undefined') {
+      socket = io(targetServer, {
+        timeout: 3000,
+        reconnectionAttempts: 2
+      });
+
+      socket.on('connect', () => {
+        socketConnected = true;
+        isStandaloneDemo = false;
+        if (clientSimInterval) clearInterval(clientSimInterval);
+
+        gatewayStatusText.textContent = 'SYSTEM LIVE';
+        gatewayStatus.classList.remove('outline');
+        gatewayStatus.classList.add('live-accent');
+        appendLogLine({
+          time: new Date().toTimeString().split(' ')[0],
+          source: 'WS',
+          level: 'CONNECTED',
+          message: `Connected to active IoT gateway on ${targetServer}`
+        });
+      });
+
+      socket.on('disconnect', () => {
+        socketConnected = false;
+        gatewayStatusText.textContent = 'DISCONNECTED';
+        gatewayStatus.classList.add('outline');
+        gatewayStatus.classList.remove('live-accent');
+      });
+
+      socket.on('init', (payload) => {
+        if (payload.state) {
+          if (payload.state.thresholds) {
+            thresholds = payload.state.thresholds;
+            inpSoilSafe.value = thresholds.soilSafeLimit;
+            inpSoilCrit.value = thresholds.soilCriticalLimit;
+            inpAirDry.value = thresholds.airHumDryLimit;
+          }
+          setModeUI(payload.state.mode);
+          updateTelemetryUI(payload.state.telemetry);
+          if (payload.state.simulationEnabled !== undefined) {
+            simActive = payload.state.simulationEnabled;
+            simStateText.textContent = simActive ? 'ON' : 'OFF';
+            simStateText.style.color = simActive ? 'var(--color-lime-pulse)' : 'var(--color-sage-40)';
+          }
+        }
+
+        if (payload.history) {
+          chart.setData(payload.history);
+        }
+
+        if (payload.logs) {
+          terminalStream.innerHTML = '';
+          payload.logs.forEach(appendLogLine);
+        }
+      });
+
+      socket.on('telemetry', (telemetry) => {
+        updateTelemetryUI(telemetry);
+      });
+
+      socket.on('history_point', (point) => {
+        chart.addPoint(point);
+      });
+
+      socket.on('state_update', (data) => {
+        if (data.mode) setModeUI(data.mode);
+        if (data.telemetry) updateTelemetryUI(data.telemetry);
+      });
+
+      socket.on('log', (logEntry) => {
+        appendLogLine(logEntry);
+      });
+
+      socket.on('thresholds_update', (t) => {
+        thresholds = t;
+        inpSoilSafe.value = t.soilSafeLimit;
+        inpSoilCrit.value = t.soilCriticalLimit;
+        inpAirDry.value = t.airHumDryLimit;
+      });
+
+      socket.on('sim_update', (data) => {
+        simActive = data.enabled;
+        simStateText.textContent = data.enabled ? 'ON' : 'OFF';
+        simStateText.style.color = data.enabled ? 'var(--color-lime-pulse)' : 'var(--color-sage-40)';
+      });
+    }
+  } catch (err) {
+    console.warn('Socket.IO connection attempt failed:', err);
+  }
+
+  // ==========================================
+  // Client-Side Standalone Simulation Engine (For Vercel)
+  // ==========================================
+  function startClientSimulator() {
+    if (socketConnected || isStandaloneDemo) return;
+    isStandaloneDemo = true;
+
+    gatewayStatusText.textContent = 'VERCEL LIVE (CLIENT SIM)';
+    gatewayStatus.classList.remove('outline');
+    gatewayStatus.classList.add('live-accent');
+
+    // Populate initial inputs
+    inpSoilSafe.value = thresholds.soilSafeLimit;
+    inpSoilCrit.value = thresholds.soilCriticalLimit;
+    inpAirDry.value = thresholds.airHumDryLimit;
+
+    // Seed 40 historical points for the chart
+    const initialHistory = [];
+    const now = Date.now();
+    for (let i = 40; i >= 0; i--) {
+      const t = new Date(now - i * 3000).toLocaleTimeString();
+      initialHistory.push({
+        time: t,
+        soilMoisture: 42 + Math.floor(Math.sin(i * 0.4) * 8),
+        airTemp: +(28 + Math.cos(i * 0.3) * 1.5).toFixed(1),
+        airHumidity: +(58 + Math.sin(i * 0.5) * 5).toFixed(1),
+        pumpStatus: false,
+        batteryVoltage: +(12.5 + Math.sin(i * 0.2) * 0.2).toFixed(2),
+        batteryPercent: 86 + Math.floor(Math.sin(i * 0.2) * 6),
+        solarVoltage: 18.2
+      });
+    }
+    chart.setData(initialHistory);
+
+    // Initial logs
+    appendLogLine({
+      time: new Date().toTimeString().split(' ')[0],
+      source: 'SYS',
+      level: 'INFO',
+      message: 'Vercel static cloud detected. Client-Side Telemetry Simulator online.'
+    });
+    appendLogLine({
+      time: new Date().toTimeString().split(' ')[0],
+      source: 'CORE',
+      level: 'READY',
+      message: `Thresholds loaded: Safe=${thresholds.soilSafeLimit}%, Crit=${thresholds.soilCriticalLimit}%, AirDry=${thresholds.airHumDryLimit}%`
+    });
+
+    updateTelemetryUI(currentTelemetry);
+
+    // Run simulation loop every 2.5 seconds
+    clientSimInterval = setInterval(() => {
+      if (!simActive) return;
+      simStep++;
+
+      let soil = currentTelemetry.soilMoisture;
+      let temp = +(28.2 + Math.sin(simStep * 0.2) * 1.6 + (Math.random() * 0.3 - 0.15)).toFixed(1);
+      let hum = +(58.5 + Math.cos(simStep * 0.15) * 4.5 + (Math.random() * 0.4 - 0.2)).toFixed(1);
+      let batVolt = +(12.55 + Math.sin(simStep * 0.1) * 0.15).toFixed(2);
+      let batPct = Math.round(85 + Math.sin(simStep * 0.1) * 8);
+      let solarVolt = +(18.1 + Math.sin(simStep * 0.3) * 0.4).toFixed(1);
+
+      // Hydration physics
+      if (currentPumpStatus) {
+        soil = Math.min(80, +(soil + 3.0 + Math.random() * 1.5).toFixed(1));
+      } else {
+        soil = Math.max(22, +(soil - (0.4 + Math.random() * 0.3)).toFixed(1));
       }
+
+      // Autonomous irrigation evaluation
+      if (currentMode === 'auto') {
+        if (soil < thresholds.soilSafeLimit) {
+          if (soil < thresholds.soilCriticalLimit && !currentPumpStatus) {
+            setPumpUI(true);
+            appendLogLine({
+              time: new Date().toTimeString().split(' ')[0],
+              source: 'AUTO',
+              level: 'ALERT',
+              message: `Kelembapan tanah kritis (${soil}% < ${thresholds.soilCriticalLimit}%). Pompa otomatis AKTIF!`
+            });
+          } else if (hum < thresholds.airHumDryLimit && !currentPumpStatus) {
+            setPumpUI(true);
+            appendLogLine({
+              time: new Date().toTimeString().split(' ')[0],
+              source: 'AUTO',
+              level: 'WARN',
+              message: `Udara kering (${hum}% RH). Pompa otomatis AKTIF!`
+            });
+          }
+        } else if (soil >= thresholds.soilSafeLimit && currentPumpStatus) {
+          setPumpUI(false);
+          appendLogLine({
+            time: new Date().toTimeString().split(' ')[0],
+            source: 'AUTO',
+            level: 'INFO',
+            message: `Kelembapan tanah optimal (${soil}% >= ${thresholds.soilSafeLimit}%). Pompa STANDBY.`
+          });
+        }
+      }
+
+      currentTelemetry = {
+        soilMoisture: soil,
+        airTemp: temp,
+        airHumidity: hum,
+        pumpStatus: currentPumpStatus,
+        batteryVoltage: batVolt,
+        batteryPercent: batPct,
+        solarVoltage: solarVolt,
+        solarStatus: 'CHARGING',
+        timestamp: new Date().toISOString()
+      };
+
+      updateTelemetryUI(currentTelemetry);
+
+      const timeStr = new Date().toLocaleTimeString();
+      chart.addPoint({
+        time: timeStr,
+        ...currentTelemetry
+      });
+
+      // Occasional heartbeat log
+      if (simStep % 6 === 0) {
+        appendLogLine({
+          time: new Date().toTimeString().split(' ')[0],
+          source: 'TELEMETRY',
+          level: 'STREAM',
+          message: `Soil: ${soil}%, Air: ${temp}°C, Hum: ${hum}% RH, Pump: ${currentPumpStatus ? 'ON' : 'OFF'}`
+        });
+      }
+    }, 2500);
+  }
+
+  // If Socket.IO hasn't connected after 1.8 seconds, activate Client Simulator
+  setTimeout(() => {
+    if (!socketConnected) {
+      startClientSimulator();
     }
+  }, 1800);
 
-    if (payload.history) {
-      chart.setData(payload.history);
-    }
-
-    if (payload.logs) {
-      terminalStream.innerHTML = '';
-      payload.logs.forEach(appendLogLine);
-    }
-  });
-
-  socket.on('telemetry', (telemetry) => {
-    updateTelemetryUI(telemetry);
-  });
-
-  socket.on('history_point', (point) => {
-    chart.addPoint(point);
-  });
-
-  socket.on('state_update', (data) => {
-    if (data.mode) setModeUI(data.mode);
-    if (data.telemetry) updateTelemetryUI(data.telemetry);
-  });
-
-  socket.on('log', (logEntry) => {
-    appendLogLine(logEntry);
-  });
-
-  socket.on('thresholds_update', (t) => {
-    inpSoilSafe.value = t.soilSafeLimit;
-    inpSoilCrit.value = t.soilCriticalLimit;
-    inpAirDry.value = t.airHumDryLimit;
-  });
-
-  socket.on('sim_update', (data) => {
-    simStateText.textContent = data.enabled ? 'ON' : 'OFF';
-    simStateText.style.color = data.enabled ? 'var(--color-lime-pulse)' : 'var(--color-sage-40)';
-  });
-
+  // ==========================================
+  // User Actions (Pump, Mode, Thresholds)
+  // ==========================================
   function triggerResumeAuto() {
-    socket.emit('resume_auto');
+    if (socketConnected && socket) {
+      socket.emit('resume_auto');
+    }
     setModeUI('auto');
+    appendLogLine({
+      time: new Date().toTimeString().split(' ')[0],
+      source: 'CONTROL',
+      level: 'MODE',
+      message: 'Mode otomatis diaktifkan kembali.'
+    });
   }
 
   function triggerPumpToggle() {
     const next = !currentPumpStatus;
-    socket.emit('set_pump', { status: next });
+    if (socketConnected && socket) {
+      socket.emit('set_pump', { status: next });
+    } else {
+      setModeUI('manual');
+      setPumpUI(next);
+      appendLogLine({
+        time: new Date().toTimeString().split(' ')[0],
+        source: 'MANUAL',
+        level: next ? 'START' : 'STOP',
+        message: `Override Pompa: ${next ? 'DIAKTIFKAN (MENYIRAM)' : 'DIMATIKAN (STANDBY)'}.`
+      });
+    }
   }
 
   togglePumpBtn.addEventListener('click', triggerPumpToggle);
@@ -262,16 +512,50 @@ document.addEventListener('DOMContentLoaded', () => {
   if (panelResumeAutoBtn) panelResumeAutoBtn.addEventListener('click', triggerResumeAuto);
 
   modeAutoBtn.addEventListener('click', () => {
-    socket.emit('set_mode', 'auto');
+    if (socketConnected && socket) {
+      socket.emit('set_mode', 'auto');
+    } else {
+      setModeUI('auto');
+      appendLogLine({
+        time: new Date().toTimeString().split(' ')[0],
+        source: 'CONTROL',
+        level: 'MODE',
+        message: 'Beralih ke mode kontrol Autonomous.'
+      });
+    }
   });
-  modeManualBtn.addEventListener('click', () => socket.emit('set_mode', 'manual'));
+
+  modeManualBtn.addEventListener('click', () => {
+    if (socketConnected && socket) {
+      socket.emit('set_mode', 'manual');
+    } else {
+      setModeUI('manual');
+      appendLogLine({
+        time: new Date().toTimeString().split(' ')[0],
+        source: 'CONTROL',
+        level: 'MODE',
+        message: 'Beralih ke mode kontrol Manual Override.'
+      });
+    }
+  });
 
   simToggleBtn.addEventListener('click', async () => {
-    try {
-      const res = await fetch('/api/simulation', { method: 'POST' });
-      const data = await res.json();
-    } catch (err) {
-      console.error('Error toggling simulation:', err);
+    if (socketConnected) {
+      try {
+        await fetch(`${targetServer}/api/simulation`, { method: 'POST' });
+      } catch (err) {
+        console.error('Error toggling server simulation:', err);
+      }
+    } else {
+      simActive = !simActive;
+      simStateText.textContent = simActive ? 'ON' : 'OFF';
+      simStateText.style.color = simActive ? 'var(--color-lime-pulse)' : 'var(--color-sage-40)';
+      appendLogLine({
+        time: new Date().toTimeString().split(' ')[0],
+        source: 'SIM',
+        level: 'TOGGLE',
+        message: `Virtual telemetry simulator ${simActive ? 'diaktifkan' : 'dijeda'}.`
+      });
     }
   });
 
@@ -282,7 +566,18 @@ document.addEventListener('DOMContentLoaded', () => {
       soilCriticalLimit: Number(inpSoilCrit.value),
       airHumDryLimit: Number(inpAirDry.value)
     };
-    socket.emit('update_thresholds', payload);
+    thresholds = payload;
+
+    if (socketConnected && socket) {
+      socket.emit('update_thresholds', payload);
+    } else {
+      appendLogLine({
+        time: new Date().toTimeString().split(' ')[0],
+        source: 'CONFIG',
+        level: 'SAVED',
+        message: `Ambang batas disimpan: Safe=${payload.soilSafeLimit}%, Crit=${payload.soilCriticalLimit}%, DryAir=${payload.airHumDryLimit}%.`
+      });
+    }
   });
 
   // ==========================================
@@ -309,7 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadExcelRecords() {
     try {
-      const res = await fetch('/api/records');
+      const res = await fetch(`${targetServer}/api/records`);
+      if (!res.ok) throw new Error('Endpoint not available');
       const data = await res.json();
       if (!data.success) return;
 
@@ -337,54 +633,103 @@ document.addEventListener('DOMContentLoaded', () => {
         recSyncStatus.textContent = `Sinkron: ${new Date().toLocaleTimeString()} (${today.recordsCount} data tercatat)`;
       }
 
-      // Render table rows
-      if (recordsTableBody) {
-        if (!reports || reports.length === 0) {
+      if (recordsTableBody && reports && reports.length > 0) {
+        recordsTableBody.innerHTML = reports.map(file => `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s;">
+            <td style="padding: 12px; color: var(--color-phosphor-white); font-weight: 500;">
+              <span style="color: var(--color-lime-pulse);">📊</span> ${file.filename}
+            </td>
+            <td style="padding: 12px; color: var(--color-mint-frost);">${file.date || '-'}</td>
+            <td style="padding: 12px; color: var(--color-sage-60);">Ringkasan Rata-rata + Log Rinci</td>
+            <td style="padding: 12px; color: var(--color-sage-60);">${file.sizeFormatted}</td>
+            <td style="padding: 12px;">
+              ${file.isToday ? '<span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: var(--color-lime-pulse);">AKTIF HARI INI</span>' : '<span style="color: var(--color-sage-40);">ARSIP 24 JAM</span>'}
+            </td>
+            <td style="padding: 12px; text-align: right;">
+              <a href="${targetServer}/api/records/download/${encodeURIComponent(file.filename)}" class="btn-ghost-outline" style="padding: 4px 10px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Unduh .xlsx
+              </a>
+            </td>
+          </tr>
+        `).join('');
+      }
+    } catch (err) {
+      // Fallback display for Vercel Static Demo
+      if (recSoilAvg && (!recSoilAvg.textContent || recSoilAvg.textContent === '--')) {
+        recSoilAvg.textContent = '44.8%';
+        if (recSoilMin) recSoilMin.textContent = '32%';
+        if (recSoilMax) recSoilMax.textContent = '58%';
+        if (recTempAvg) recTempAvg.textContent = '28.6°C';
+        if (recTempMin) recTempMin.textContent = '26.8°C';
+        if (recTempMax) recTempMax.textContent = '30.5°C';
+        if (recHumAvg) recHumAvg.textContent = '59.2%';
+        if (recHumMin) recHumMin.textContent = '52%';
+        if (recHumMax) recHumMax.textContent = '67%';
+        if (recBatAvg) recBatAvg.textContent = '12.6V';
+        if (recBatPct) recBatPct.textContent = '88%';
+        if (recPumpCycles) recPumpCycles.textContent = '6x';
+        if (recSamplesCount) recSamplesCount.textContent = '480';
+        if (recSyncStatus) recSyncStatus.textContent = 'Mode Demo Vercel: Data Rekap Realtime Virtual';
+
+        if (recordsTableBody) {
+          const todayDate = new Date().toISOString().split('T')[0];
           recordsTableBody.innerHTML = `
-            <tr>
-              <td colspan="6" style="padding: 16px; text-align: center; color: var(--color-sage-40);">
-                File hari ini sedang mencatat aktif. Klik "Unduh Excel Hari Ini" untuk menyimpan instan.
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: 12px; color: var(--color-phosphor-white);"><span style="color: var(--color-lime-pulse);">📊</span> hydro_telemetry_${todayDate}.xlsx</td>
+              <td style="padding: 12px; color: var(--color-mint-frost);">${todayDate}</td>
+              <td style="padding: 12px; color: var(--color-sage-60);">Ringkasan Rata-rata + Log Rinci</td>
+              <td style="padding: 12px; color: var(--color-sage-60);">42.5 KB</td>
+              <td style="padding: 12px;"><span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: var(--color-lime-pulse);">DEMO AKTIF</span></td>
+              <td style="padding: 12px; text-align: right;">
+                <button id="btn-demo-download" class="btn-ghost-outline" style="padding: 4px 10px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                  Unduh .csv
+                </button>
               </td>
             </tr>
           `;
-        } else {
-          recordsTableBody.innerHTML = reports.map(file => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s;">
-              <td style="padding: 12px; color: var(--color-phosphor-white); font-weight: 500;">
-                <span style="color: var(--color-lime-pulse);">📊</span> ${file.filename}
-              </td>
-              <td style="padding: 12px; color: var(--color-mint-frost);">
-                ${file.date || '-'}
-              </td>
-              <td style="padding: 12px; color: var(--color-sage-60);">
-                Ringkasan Rata-rata + Log Rinci
-              </td>
-              <td style="padding: 12px; color: var(--color-sage-60);">
-                ${file.sizeFormatted}
-              </td>
-              <td style="padding: 12px;">
-                ${file.isToday ? '<span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: var(--color-lime-pulse);">AKTIF HARI INI</span>' : '<span style="color: var(--color-sage-40);">ARSIP 24 JAM</span>'}
-              </td>
-              <td style="padding: 12px; text-align: right;">
-                <a href="/api/records/download/${encodeURIComponent(file.filename)}" class="btn-ghost-outline" style="padding: 4px 10px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  Unduh .xlsx
-                </a>
-              </td>
-            </tr>
-          `).join('');
+          const demoBtn = document.getElementById('btn-demo-download');
+          if (demoBtn) demoBtn.addEventListener('click', downloadClientCsvReport);
         }
       }
-    } catch (err) {
-      console.error('Error fetching excel records:', err);
     }
   }
 
-  // Load records on start and refresh every 5 seconds
+  // Client-side CSV generator for Vercel demo
+  function downloadClientCsvReport(e) {
+    if (e) e.preventDefault();
+    const headers = 'Waktu,KelembapanTanah,Suhu,KelembapanUdara,PompaStatus,BateraiVolt,BateraiPersen,PanelSuryaVolt\n';
+    let rows = '';
+    const now = Date.now();
+    for (let i = 20; i >= 0; i--) {
+      const d = new Date(now - i * 60000).toISOString();
+      const s = (40 + Math.sin(i) * 6).toFixed(1);
+      const t = (28 + Math.cos(i) * 1.2).toFixed(1);
+      const h = (58 + Math.sin(i * 0.8) * 4).toFixed(1);
+      rows += `${d},${s}%,${t}C,${h}%,${i % 7 === 0 ? 'ON' : 'OFF'},12.6V,88%,18.2V\n`;
+    }
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `hydro_telemetry_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  if (btnExportToday) {
+    btnExportToday.addEventListener('click', (e) => {
+      if (isStandaloneDemo) {
+        e.preventDefault();
+        downloadClientCsvReport();
+      }
+    });
+  }
+
   loadExcelRecords();
-  setInterval(loadExcelRecords, 5000);
+  setInterval(loadExcelRecords, 8000);
 });

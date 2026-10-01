@@ -4,7 +4,8 @@
   "description": "Phosphor-terminal real-time IoT Hydroponic Dashboard powered by Node.js and Socket.IO",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "echo 'Static build complete'"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

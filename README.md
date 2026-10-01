@@ -70,12 +70,19 @@ Karena dashboard ini menggunakan **Express + Socket.IO (WebSocket)**, platform s
    - **Start Command:** `node server.js`
 5. Klik **Create Web Service**. Web dashboard Anda akan langsung online dengan dukungan WebSocket penuh!
 
-### Opsi Vercel (Hanya untuk Tampilan Statis)
-*Catatan: Vercel berbasis Serverless Functions, sehingga koneksi WebSocket persisten (Socket.IO) tidak didukung secara native.*
-Jika ingin deploy tampilan frontend saja:
-1. Hubungkan repository ke [Vercel](https://vercel.com).
-2. Set **Root Directory** ke `dashboard/public` (atau `dashboard`).
-3. Deploy.
+### Cara Deploy ke Vercel (Siap Pakai & Otomatis)
+Proyek ini sudah dilengkapi dengan konfigurasi `vercel.json` dan engine hybrid:
+1. Buka [Vercel.com](https://vercel.com) dan login menggunakan akun GitHub.
+2. Klik tombol **Add New...** > **Project**.
+3. Pilih repository GitHub proyek ini, lalu klik **Import**.
+4. Di bagian konfigurasi proyek:
+   - **Framework Preset:** Pilih `Other`.
+   - **Root Directory:** Biarkan default `./` atau pilih `dashboard` (keduanya sudah dikonfigurasi).
+   - **Environment Variables:** Kosongkan (tidak perlu diisi).
+5. Klik **Deploy**.
+6. Selesai! Web dashboard Anda akan langsung aktif di domain `https://<nama-proyek>.vercel.app`.
+   - Dashboard otomatis menyalakan **Client Simulation Engine** sehingga grafik, sensor suhu, kelembapan tanah, kendali pompa, dan log terminal langsung bergerak aktif secara realtime.
+   - Anda juga dapat menghubungkannya ke backend Render kapan saja dengan mengklik tombol **SERVER** di navbar atas.
 
 ---
 
