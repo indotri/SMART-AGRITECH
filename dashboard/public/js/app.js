@@ -337,13 +337,90 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // Client-Side Standalone Simulation Engine (For Vercel)
+  // Hybrid Cloud Polling & Simulation Engine (For Vercel & Standalone)
   // ==========================================
+  let cloudPollingInterval = null;
+  let lastSeenHardwareTimestamp = 0;
+  let hardwareActiveMode = false;
+
+  async function sendCloudControl(payload) {
+    try {
+      await fetch(`${targetServer}/api/telemetry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.warn('Gagal kirim kontrol ke cloud:', e);
+    }
+  }
+
+  async function checkCloudTelemetry() {
+    try {
+      const res = await fetch(`${targetServer}/api/telemetry`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (!data || !data.success) return false;
+
+      // Sinkronisasi threshold dari cloud
+      if (data.thresholds) {
+        thresholds = data.thresholds;
+        inpSoilSafe.value = thresholds.soilSafeLimit;
+        inpSoilCrit.value = thresholds.soilCriticalLimit;
+        inpAirDry.value = thresholds.airHumDryLimit;
+      }
+
+      // Deteksi jika ESP32 fisik aktif mengirim data (dalam 20 detik terakhir)
+      if (data.isHardwareLive && data.telemetry) {
+        hardwareActiveMode = true;
+        gatewayStatusText.textContent = 'VERCEL LIVE (ESP32 HARDWARE)';
+        gatewayStatus.classList.remove('outline');
+        gatewayStatus.classList.add('live-accent');
+
+        if (data.lastHardwarePing !== lastSeenHardwareTimestamp) {
+          lastSeenHardwareTimestamp = data.lastHardwarePing;
+          updateTelemetryUI(data.telemetry);
+          if (data.mode) setModeUI(data.mode);
+          setPumpUI(data.telemetry.pumpStatus);
+
+          chart.addPoint({
+            time: new Date(data.telemetry.timestamp || Date.now()).toLocaleTimeString(),
+            ...data.telemetry
+          });
+
+          appendLogLine({
+            time: new Date().toTimeString().split(' ')[0],
+            source: 'ESP32',
+            level: 'DATA',
+            message: `Data fisik ESP32: Tanah ${data.telemetry.soilMoisture}%, Suhu ${data.telemetry.airTemp}°C, RH ${data.telemetry.airHumidity}%, Pompa ${data.telemetry.pumpStatus ? 'ON' : 'OFF'}`
+          });
+        }
+        return true;
+      } else {
+        if (hardwareActiveMode) {
+          hardwareActiveMode = false;
+          appendLogLine({
+            time: new Date().toTimeString().split(' ')[0],
+            source: 'CLOUD',
+            level: 'IDLE',
+            message: 'ESP32 belum mengirim data baru dalam 20 detik. Menunggu transmisi...'
+          });
+        }
+        gatewayStatusText.textContent = 'VERCEL LIVE (MENUNGGU ESP32)';
+        gatewayStatus.classList.remove('outline');
+        gatewayStatus.classList.add('live-accent');
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
   function startClientSimulator() {
     if (socketConnected || isStandaloneDemo) return;
     isStandaloneDemo = true;
 
-    gatewayStatusText.textContent = 'VERCEL LIVE (CLIENT SIM)';
+    gatewayStatusText.textContent = 'VERCEL LIVE (MENUNGGU ESP32)';
     gatewayStatus.classList.remove('outline');
     gatewayStatus.classList.add('live-accent');
 
@@ -375,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
       time: new Date().toTimeString().split(' ')[0],
       source: 'SYS',
       level: 'INFO',
-      message: 'Vercel static cloud detected. Client-Side Telemetry Simulator online.'
+      message: 'Vercel Serverless Gateway terhubung. Menunggu data ESP32...'
     });
     appendLogLine({
       time: new Date().toTimeString().split(' ')[0],
@@ -386,8 +463,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateTelemetryUI(currentTelemetry);
 
+    // Periksa status hardware segera
+    checkCloudTelemetry();
+
     // Run simulation loop every 2.5 seconds
-    clientSimInterval = setInterval(() => {
+    clientSimInterval = setInterval(async () => {
+      // Prioritas 1: Ambil data nyata dari Vercel /api/telemetry
+      const hasRealHardware = await checkCloudTelemetry();
+      if (hasRealHardware) return; // Jika hardware nyata aktif, lewati simulasi matematis
+
       if (!simActive) return;
       simStep++;
 
@@ -481,6 +565,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function triggerResumeAuto() {
     if (socketConnected && socket) {
       socket.emit('resume_auto');
+    } else {
+      sendCloudControl({ action: 'set_mode', mode: 'auto' });
     }
     setModeUI('auto');
     appendLogLine({
@@ -498,6 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       setModeUI('manual');
       setPumpUI(next);
+      sendCloudControl({ action: 'set_pump', status: next });
       appendLogLine({
         time: new Date().toTimeString().split(' ')[0],
         source: 'MANUAL',
@@ -516,6 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
       socket.emit('set_mode', 'auto');
     } else {
       setModeUI('auto');
+      sendCloudControl({ action: 'set_mode', mode: 'auto' });
       appendLogLine({
         time: new Date().toTimeString().split(' ')[0],
         source: 'CONTROL',
@@ -530,6 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
       socket.emit('set_mode', 'manual');
     } else {
       setModeUI('manual');
+      sendCloudControl({ action: 'set_mode', mode: 'manual' });
       appendLogLine({
         time: new Date().toTimeString().split(' ')[0],
         source: 'CONTROL',
@@ -571,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (socketConnected && socket) {
       socket.emit('update_thresholds', payload);
     } else {
+      sendCloudControl({ action: 'update_thresholds', thresholds: payload });
       appendLogLine({
         time: new Date().toTimeString().split(' ')[0],
         source: 'CONFIG',

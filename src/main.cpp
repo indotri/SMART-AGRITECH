@@ -10,6 +10,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 #include <Wire.h>
 
 // Inisialisasi LCD I2C di alamat 0x27 (16 kolom x 2 baris)
@@ -20,9 +21,8 @@ char auth[] = BLYNK_AUTH_TOKEN;
 char ssid[] = "TITIKPULANG_4G";
 char pass[] = "udahpesenbelum";
 
-// URL Gateway Web Dashboard Node.js
-// IP Laptop Anda di jaringan TITIKPULANG_5G saat ini: 192.168.1.239
-const char *nodeServerUrl = "http://192.168.1.239:3000/api/telemetry";
+// URL Gateway Web Dashboard Vercel Cloud (Serverless API)
+const char *nodeServerUrl = "https://smart-agritech-iot.vercel.app/api/telemetry";
 
 #define PIN_SOIL_POT 34
 #define PIN_BATTERY_POT                                                        \
@@ -187,11 +187,13 @@ void processIrrigationLogic() {
     lcd.print(bufferLine2);
   }
 
-  // 7. Kirim Telemetry ke Server Web Node.js
+  // 7. Kirim Telemetry ke Server Web Vercel Cloud via HTTPS
   if (WiFi.status() == WL_CONNECTED) {
+    WiFiClientSecure secureClient;
+    secureClient.setInsecure(); // Mengabaikan verifikasi CA SSL agar hemat memori & cepat
     HTTPClient http;
-    http.begin(nodeServerUrl);
-    http.setTimeout(1200); // 1.2s timeout
+    http.begin(secureClient, nodeServerUrl);
+    http.setTimeout(3500); // 3.5s timeout untuk internet cloud
     http.addHeader("Content-Type", "application/json");
 
     String json = "{\"soilMoisture\":" + String(soilMoisture) +
@@ -217,6 +219,9 @@ void processIrrigationLogic() {
       } else if (resp.indexOf("\"mode\":\"auto\"") > 0) {
         manualOverrideActive = false;
       }
+      Serial.printf("[CLOUD] Berhasil kirim ke Vercel! (HTTP %d)\n", code);
+    } else {
+      Serial.printf("[CLOUD] Gagal kirim ke Vercel: %s (Err %d)\n", http.errorToString(code).c_str(), code);
     }
     http.end();
   }
