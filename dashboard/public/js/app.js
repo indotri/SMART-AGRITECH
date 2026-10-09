@@ -189,13 +189,120 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // SOCKET.IO REALTIME ENGINE
+  // HYBRID ENGINE: SOCKET.IO (LOCAL/RENDER) & HTTP POLLING (VERCEL SERVERLESS)
   // ==========================================================================
+  const vercelPill = document.getElementById('vercel-status-pill');
+  const serverPill = document.getElementById('server-status-pill');
+  const latencyBadge = document.getElementById('socket-latency');
   let socket = null;
+  let vercelPollingInterval = null;
+  let lastHardwareSeenTime = 0;
+  let logDebounceCounter = 0;
+
+  async function pollVercelTelemetry() {
+    try {
+      const res = await fetch('/api/telemetry');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.success) return;
+
+      if (serverPill) {
+        serverPill.innerHTML = `
+          <span class="dot-indicator dot-green"></span>
+          <span>SERVER: <strong style="color: var(--brand-emerald);">VERCEL API</strong></span>
+        `;
+      }
+
+      if (data.isHardwareLive && data.telemetry) {
+        // Hardware fisik ESP32 terhubung dan aktif!
+        if (clientSimInterval) {
+          clearInterval(clientSimInterval);
+          clientSimInterval = null;
+        }
+
+        if (simStateText) {
+          simStateText.textContent = 'HARDWARE';
+          simStateText.style.color = 'var(--brand-emerald)';
+        }
+
+        if (vercelPill) {
+          vercelPill.innerHTML = `
+            <span class="dot-indicator dot-green" style="box-shadow: 0 0 10px #10b981;"></span>
+            <span>ESP32 LIVE <strong style="color: var(--brand-emerald); font-size: 0.7rem;">(TERHUBUNG)</strong></span>
+          `;
+        }
+
+        if (latencyBadge) {
+          const secAgo = Math.round((Date.now() - (data.lastHardwarePing || Date.now())) / 1000);
+          latencyBadge.textContent = `${secAgo}s ago (HTTP)`;
+          latencyBadge.style.color = 'var(--brand-emerald)';
+        }
+
+        updateTelemetryUI(data.telemetry);
+
+        if (data.history && data.history.length > 0) {
+          if (mainChart) mainChart.setData(data.history);
+          if (metricsChart1) metricsChart1.setData(data.history);
+          if (metricsChart2) metricsChart2.setData(data.history);
+          if (trendsChart) trendsChart.setData(data.history);
+        } else {
+          if (mainChart) mainChart.addPoint(data.telemetry);
+          if (metricsChart1) metricsChart1.addPoint(data.telemetry);
+          if (metricsChart2) metricsChart2.addPoint(data.telemetry);
+          if (trendsChart) trendsChart.addPoint(data.telemetry);
+        }
+
+        logDebounceCounter++;
+        if (logDebounceCounter % 4 === 1) {
+          addTerminalLog({
+            source: 'ESP32',
+            level: 'DATA',
+            message: `Data Sensor Masuk: Tanah ${data.telemetry.soilMoisture}% | Suhu ${data.telemetry.airTemp}°C | RH ${data.telemetry.airHumidity}% | Bat ${data.telemetry.batteryVoltage}V`
+          });
+        }
+      } else {
+        // Hardware belum mengirim data dalam 20 detik terakhir
+        if (vercelPill) {
+          vercelPill.innerHTML = `
+            <span class="dot-indicator dot-yellow"></span>
+            <span>ESP32 STANDBY <span style="font-size: 0.65rem; color: #f59e0b;">(MENUNGGU SINYAL)</span></span>
+          `;
+        }
+        if (latencyBadge) {
+          latencyBadge.textContent = 'Standby';
+          latencyBadge.style.color = '#f59e0b';
+        }
+
+        // Jika hardware belum aktif dan user ingin simulasi, jalankan mock simulator
+        if (simActive && !clientSimInterval) {
+          initMockTelemetryStream();
+        }
+      }
+    } catch (err) {
+      console.warn('Vercel polling warning:', err);
+    }
+  }
+
+  function startVercelPollingEngine() {
+    addTerminalLog({
+      source: 'GATEWAY',
+      level: 'INFO',
+      message: 'Mode Cloud Vercel aktif. Menghubungkan ke API /api/telemetry...'
+    });
+    pollVercelTelemetry();
+    if (!vercelPollingInterval) {
+      vercelPollingInterval = setInterval(pollVercelTelemetry, 2500);
+    }
+  }
+
   try {
-    socket = io({ reconnectionAttempts: 3, timeout: 2000 });
+    socket = io({ reconnectionAttempts: 2, timeout: 1500 });
 
     socket.on('connect', () => {
+      if (vercelPollingInterval) {
+        clearInterval(vercelPollingInterval);
+        vercelPollingInterval = null;
+      }
       addTerminalLog({ source: 'NET', level: 'READY', message: 'Socket connection established with Hydroponics OS gateway.' });
     });
 
@@ -228,36 +335,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('connect_error', () => {
-      initMockTelemetryStream();
+      startVercelPollingEngine();
     });
 
   } catch (err) {
-    initMockTelemetryStream();
+    startVercelPollingEngine();
   }
 
   // ==========================================================================
   // MOCK TELEMETRY STREAM FALLBACK
   // ==========================================================================
   function initMockTelemetryStream() {
-    const initialHistory = [];
-    const now = Date.now();
-    for (let i = 30; i >= 0; i--) {
-      const t = new Date(now - i * 3000).toLocaleTimeString();
-      initialHistory.push({
-        time: t,
-        soilMoisture: +(67 + Math.sin(i * 0.4) * 3).toFixed(1),
-        airTemp: +(24 + Math.cos(i * 0.3) * 1.2).toFixed(1),
-        airHumidity: +(68 + Math.sin(i * 0.5) * 4).toFixed(1),
-        pumpStatus: true,
-        batteryVoltage: 53.2,
-        batteryPercent: 94
-      });
-    }
-    if (mainChart) mainChart.setData(initialHistory);
-    if (metricsChart1) metricsChart1.setData(initialHistory);
-    if (metricsChart2) metricsChart2.setData(initialHistory);
-    if (trendsChart) trendsChart.setData(initialHistory);
-
     if (!clientSimInterval) {
       clientSimInterval = setInterval(() => {
         if (!simActive) return;
@@ -269,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
           airTemp: +(24.2 + Math.cos(simStep * 0.2) * 0.8).toFixed(1),
           airHumidity: +(68.2 + Math.sin(simStep * 0.4) * 2.5).toFixed(1),
           pumpStatus: true,
-          batteryVoltage: 53.2,
+          batteryVoltage: 12.6,
           batteryPercent: 94,
           phVal: +(6.25 + Math.sin(simStep * 0.1) * 0.05).toFixed(2)
         };
@@ -287,12 +375,42 @@ document.addEventListener('DOMContentLoaded', () => {
   // CONTROLS & EMERGENCY SHUTOFF
   // ==========================================================================
   if (emergencyBtn) {
-    emergencyBtn.addEventListener('click', () => {
+    emergencyBtn.addEventListener('click', async () => {
       const confirmShutoff = confirm('APAKAH ANDA YAKIN? Semua relai solenoid dan pompa akan dimatikan seketika.');
       if (confirmShutoff) {
-        if (socket && socket.connected) socket.emit('emergencyShutoff');
+        if (socket && socket.connected) {
+          socket.emit('emergencyShutoff');
+        } else {
+          try {
+            await fetch('/api/telemetry', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'set_pump', status: false })
+            });
+          } catch (e) {}
+        }
         addTerminalLog({ source: 'SAFETY', level: 'WARN', message: 'EMERGENCY SHUTOFF TRIGGERED! Semua relai dinonaktifkan.' });
         alert('Emergency Shutoff Berhasil Dijalankan.');
+      }
+    });
+  }
+
+  if (quickPumpToggle) {
+    quickPumpToggle.addEventListener('change', async (e) => {
+      const targetState = e.target.checked;
+      if (socket && socket.connected) {
+        socket.emit('setPump', targetState);
+      } else {
+        try {
+          await fetch('/api/telemetry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'set_pump', status: targetState })
+          });
+          addTerminalLog({ source: 'CONTROL', level: 'CMD', message: `Override Pompa via Cloud: ${targetState ? 'MENYALA (ON)' : 'MATI (OFF)'}` });
+        } catch (e) {
+          console.error(e);
+        }
       }
     });
   }
