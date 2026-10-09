@@ -18,11 +18,12 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Wi-Fi Virtual khusus Wokwi (tidak perlu diubah)
 char auth[] = BLYNK_AUTH_TOKEN;
-char ssid[] = "TITIKPULANG_4G";
-char pass[] = "udahpesenbelum";
+char ssid[] = "indosus";
+char pass[] = "12344321";
 
 // URL Gateway Web Dashboard Vercel Cloud (Serverless API)
-const char *nodeServerUrl = "https://smart-agritech-iot.vercel.app/api/telemetry";
+const char *nodeServerUrl =
+    "https://smart-agritech-iot.vercel.app/api/telemetry";
 
 #define PIN_SOIL_POT 34
 #define PIN_BATTERY_POT                                                        \
@@ -67,7 +68,9 @@ void processIrrigationLogic() {
         dht = tryDht22;
         airHumidity = h;
         airTemp = t;
-        Serial.printf("[BERHASIL!] Sensor DHT22 (Putih) ditemukan normal di pin GPIO %d (D%d)!\n", p, p);
+        Serial.printf("[BERHASIL!] Sensor DHT22 (Putih) ditemukan normal di "
+                      "pin GPIO %d (D%d)!\n",
+                      p, p);
         break;
       }
       // 2. Coba protokol DHT11 (Sensor Biru)
@@ -80,7 +83,9 @@ void processIrrigationLogic() {
         dht = tryDht11;
         airHumidity = h;
         airTemp = t;
-        Serial.printf("[BERHASIL!] Sensor DHT11 (Biru) ditemukan normal di pin GPIO %d (D%d)!\n", p, p);
+        Serial.printf("[BERHASIL!] Sensor DHT11 (Biru) ditemukan normal di pin "
+                      "GPIO %d (D%d)!\n",
+                      p, p);
         break;
       }
     }
@@ -113,7 +118,8 @@ void processIrrigationLogic() {
 
   bool dhtOk = (!isnan(airHumidity) && !isnan(airTemp));
   if (!dhtOk) {
-    Serial.printf("[DIAGNOSTIK] DHT22 belum terbaca. Level sinyal -> D15: %d | D13: %d | D4: %d | D14: %d\n",
+    Serial.printf("[DIAGNOSTIK] DHT22 belum terbaca. Level sinyal -> D15: %d | "
+                  "D13: %d | D4: %d | D14: %d\n",
                   v15, v13, v4, v14);
     airHumidity = 0;
     airTemp = 0;
@@ -170,7 +176,8 @@ void processIrrigationLogic() {
       snprintf(bufferLine1, sizeof(bufferLine1), "T:%.0fC H:%.0f%% B:%d%%",
                airTemp, airHumidity, batteryPercent);
     } else {
-      snprintf(bufferLine1, sizeof(bufferLine1), "DHT Err! B:%d%%", batteryPercent);
+      snprintf(bufferLine1, sizeof(bufferLine1), "DHT Err! B:%d%%",
+               batteryPercent);
     }
     lcd.setCursor(0, 0);
     lcd.print(bufferLine1);
@@ -190,7 +197,8 @@ void processIrrigationLogic() {
   // 7. Kirim Telemetry ke Server Web Vercel Cloud via HTTPS
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClientSecure secureClient;
-    secureClient.setInsecure(); // Mengabaikan verifikasi CA SSL agar hemat memori & cepat
+    secureClient.setInsecure(); // Mengabaikan verifikasi CA SSL agar hemat
+                                // memori & cepat
     HTTPClient http;
     http.begin(secureClient, nodeServerUrl);
     http.setTimeout(3500); // 3.5s timeout untuk internet cloud
@@ -221,20 +229,21 @@ void processIrrigationLogic() {
       }
       Serial.printf("[CLOUD] Berhasil kirim ke Vercel! (HTTP %d)\n", code);
     } else {
-      Serial.printf("[CLOUD] Gagal kirim ke Vercel: %s (Err %d)\n", http.errorToString(code).c_str(), code);
+      Serial.printf("[CLOUD] Gagal kirim ke Vercel: %s (Err %d)\n",
+                    http.errorToString(code).c_str(), code);
     }
     http.end();
   }
 
   // Logging ke Serial Monitor
-  Serial.printf("Tanah: %d%% (Raw ADC: %d) | RH: %.1f%% | Suhu: %.1f°C | Baterai: %.2fV "
-                "(%d%%) | Pompa: %s | Mode: %s%s\n",
-                soilMoisture, rawSoil, airHumidity, airTemp, batteryVoltage,
-                batteryPercent, triggerPump ? "MENYIRAM (ON)" : "MATI (OFF)",
-                manualOverrideActive
-                    ? (manualPumpTarget ? "MANUAL-ON" : "MANUAL-OFF")
-                    : "AUTO",
-                lowBatteryCutoff ? " [LOW BATTERY LOCK]" : "");
+  Serial.printf(
+      "Tanah: %d%% (Raw ADC: %d) | RH: %.1f%% | Suhu: %.1f°C | Baterai: %.2fV "
+      "(%d%%) | Pompa: %s | Mode: %s%s\n",
+      soilMoisture, rawSoil, airHumidity, airTemp, batteryVoltage,
+      batteryPercent, triggerPump ? "MENYIRAM (ON)" : "MATI (OFF)",
+      manualOverrideActive ? (manualPumpTarget ? "MANUAL-ON" : "MANUAL-OFF")
+                           : "AUTO",
+      lowBatteryCutoff ? " [LOW BATTERY LOCK]" : "");
 }
 
 void setup() {
@@ -295,7 +304,8 @@ void setup() {
   // Tampilkan data pertama kali secara langsung ke LCD & Dashboard
   processIrrigationLogic();
 
-  // Evaluasi logika sensor dan kirim data setiap 3 detik (sesuai spesifikasi DHT22)
+  // Evaluasi logika sensor dan kirim data setiap 3 detik (sesuai spesifikasi
+  // DHT22)
   timer.setInterval(3000L, processIrrigationLogic);
 }
 
