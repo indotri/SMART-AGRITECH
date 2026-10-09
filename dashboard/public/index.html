@@ -1,612 +1,1186 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Hydroponic Terminal — Node.js & ESP32</title>
-  <meta name="description" content="Phosphor terminal IoT web dashboard for precision hydroponic monitoring with Node.js and ESP32.">
+  <title>Smart Agri Tech — HYDROPONICS OS</title>
+  <meta name="description" content="Precision Hydroponics in Phosphor Clarity. Automated multi-zone peristaltic dosing, sensor telemetry, and crop climate modulation.">
   <link rel="stylesheet" href="/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237fee64' stroke-width='2'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2'><path d='M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z'></path><path d='M12 6v12'></path><path d='M12 12c2.5-3 5-3 5-3'></path></svg>">
 </head>
 <body>
 
-  <!-- Top Navigation Bar (DESIGN.md specification) -->
-  <header class="navbar" id="navbar">
-    <a href="#" class="nav-brand">
-      <div class="logo-cube">
-        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-          <polyline points="2 17 12 22 22 17"></polyline>
-          <polyline points="2 12 12 17 22 12"></polyline>
-        </svg>
-      </div>
-      <span class="brand-text">HydroNode</span>
-      <span class="brand-sub">/ IoT Gateway</span>
-    </a>
+  <!-- ==========================================================================
+       TOP NAVBAR (Fixed Header matching Figma Reference)
+       ========================================================================== -->
+  <header class="figma-navbar">
+    <div class="navbar-container">
+      <!-- Brand Logo -->
+      <a href="#overview" class="brand-group">
+        <div class="brand-leaf-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"></path>
+            <path d="M12 6v12"></path>
+            <path d="M12 12c2.5-3 5-3 5-3"></path>
+            <path d="M12 15c-2.5-3-5-3-5-3"></path>
+          </svg>
+        </div>
+        <div class="brand-text-stack">
+          <span class="brand-main-title">Smart Agri Tech</span>
+          <span class="brand-sub-badge">HYDROPONICS OS</span>
+        </div>
+      </a>
 
-    <ul class="nav-links">
-      <li><a href="#overview">Overview</a></li>
-      <li><a href="#telemetry">Metrics</a></li>
-      <li><a href="#actuators">Actuators</a></li>
-      <li><a href="#chart-section">Trends</a></li>
-      <li><a href="#records-section">Tracker & Excel</a></li>
-      <li><a href="#terminal-section">Terminal</a></li>
-    </ul>
+      <!-- Center Smooth Scroll Nav Links -->
+      <nav class="nav-tab-list">
+        <a href="#overview" class="nav-tab-btn active" id="nav-link-overview">Overview</a>
+        <a href="#metrics" class="nav-tab-btn" id="nav-link-metrics">Metrics</a>
+        <a href="#actuators" class="nav-tab-btn" id="nav-link-actuators">Actuators</a>
+        <a href="#trends" class="nav-tab-btn" id="nav-link-trends">Trends</a>
+        <a href="#records" class="nav-tab-btn" id="nav-link-records">Tracker &amp; Excel</a>
+        <a href="#terminal" class="nav-tab-btn" id="nav-link-terminal">Terminal</a>
+      </nav>
 
-    <div class="nav-actions">
-      <div class="tag-pill live-accent" id="gateway-status">
-        <span class="led-indicator"></span>
-        <span id="gateway-status-text">SYSTEM LIVE</span>
+      <!-- Right Nav Status & User Profile -->
+      <div class="nav-actions-right">
+        <div class="pill-status-dot" id="server-status-pill">
+          <span class="dot-indicator dot-green"></span>
+          <span>SERVER: <strong style="color: var(--brand-emerald);">AUTO</strong></span>
+        </div>
+
+        <div class="pill-status-dot" id="vercel-status-pill">
+          <span class="dot-indicator dot-blue"></span>
+          <span>VERCEL LIVE <span style="font-size: 0.65rem; color: var(--text-muted);">(CLIENT SIM)</span></span>
+        </div>
+
+        <button class="toggle-switch-compact" id="sim-toggle-btn" title="Toggle Virtual Simulator">
+          SIMULATOR: <span id="sim-state-text" style="color: var(--brand-emerald);">ON</span>
+        </button>
+
+        <button class="toggle-switch-compact" id="theme-toggle-btn" title="Toggle Theme (Light / Dark)">
+          <span id="theme-icon">☀️ LIGHT</span>
+        </button>
+
+        <div class="user-profile-badge">
+          <div class="avatar-circle">EV</div>
+          <div>
+            <div class="user-name-text">Dr. Eleanor Vance</div>
+            <div class="user-role-text">Lead Agronomist</div>
+          </div>
+        </div>
       </div>
-      <button class="tag-pill outline" id="sim-toggle-btn" title="Toggle between virtual telemetry and real hardware">
-        SIMULATOR: <span id="sim-state-text" style="color:var(--color-lime-pulse)">ON</span>
-      </button>
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="section hero-section" id="overview">
-    <div class="container">
-      <div class="hero-content">
-        <div class="eyebrow">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          OFF-GRID SOLAR // ESP32 SMART IRRIGATION CLUSTER
+  <!-- ==========================================================================
+       MAIN CONTENT VIEWPORT (Continuous 1-Page Layout)
+       ========================================================================== -->
+  <main class="main-viewport">
+
+    <!-- Sub-status Bar -->
+    <div class="sub-status-bar">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="color: var(--brand-emerald);">●</span>
+        <span>NEXT-GEN PRECISION AGRONOMY &bull; SYSTEM LIVE</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <span>📶 Socket latency: <strong style="color: var(--brand-emerald);" id="socket-latency">14ms</strong></span>
+        <span>ESP32-S3 Mesh: <strong style="color: var(--text-heading);">16 Nodes Active</strong></span>
+      </div>
+    </div>
+
+    <!-- ========================================================================
+         SECTION 1: OVERVIEW (Bio-Dome 3D Centerpiece & Core Telemetry)
+         ======================================================================== -->
+    <section class="page-section-block" id="overview">
+      <div class="view-header-row">
+        <div>
+          <h1 class="view-headline">Precision Hydroponics in Phosphor Clarity</h1>
+          <p class="view-subhead">
+            High-performance developer dashboard powered by Node.js &amp; Socket.IO. Real-time telemetry streaming, automated multi-zone peristaltic dosing, and sub-second crop climate modulation.
+          </p>
+        </div>
+        <div class="header-cta-group">
+          <a href="#metrics" class="btn-figma-primary" style="text-decoration: none;">
+            Inspect Metrics
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+          <a href="#actuators" class="btn-figma-outline" style="text-decoration: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Quick Override
+          </a>
+        </div>
+      </div>
+
+      <!-- Centerpiece 3D Bio-Dome Showcase Box -->
+      <div class="bio-dome-showcase-box">
+        <div class="bio-dome-image-wrap">
+          <!-- Floating Tags -->
+          <div class="floating-overlay-tag tag-top-left">
+            <span style="color: var(--brand-emerald);">●</span>
+            <span>ZONE 01 &bull; CANOPY MICROCLIMATE &bull; <strong style="color: var(--brand-emerald);">VPD: 1.15 kPa (OPTIMAL)</strong></span>
+          </div>
+
+          <div class="floating-overlay-tag tag-top-right">
+            <span style="color: var(--brand-emerald);">💧</span>
+            <span>NUTRIENT MANIFOLD RATE &bull; <strong style="color: var(--brand-emerald);">4.8 L/min &bull; EC: 2.1 mS/cm</strong></span>
+          </div>
+
+          <!-- 3D Render Image -->
+          <img src="/images/bio_dome_render.png" alt="3D Hydroponic Bio-Dome" class="bio-dome-image-tag">
+
+          <!-- Bottom Floating Bar -->
+          <div class="dome-bottom-floating-bar">
+            <div class="photoperiod-pill">
+              <span>☀️ PHOTOPERIOD: <strong>16H ON / 8H OFF</strong></span>
+              <span>💡 IRRADIANCE: <strong style="color: var(--brand-emerald);">42,500 lx</strong></span>
+            </div>
+
+            <div class="view-mode-pill-tabs">
+              <button class="view-mode-btn active">Sensors</button>
+              <button class="view-mode-btn">Flow Heatmap</button>
+              <button class="view-mode-btn">Canopy 3D</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Primary Stat Cards Row -->
+      <div class="stat-cards-row-4">
+        <!-- 1. Substrate VWC -->
+        <div class="card-white-box">
+          <div>
+            <div class="card-header-flex">
+              <div>
+                <div class="card-label-small">SUBSTRATE VWC</div>
+                <div class="card-sublabel-dim">Coir/Perlite Mesh B3</div>
+              </div>
+              <span class="badge-pill-green">↗ +2.4%</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+              <span class="stat-huge-number" id="val-soil-overview">68.4</span>
+              <span class="stat-unit-text">%</span>
+            </div>
+          </div>
+          <div>
+            <div style="height: 4px; width: 100%; background: var(--border-subtle); border-radius: 4px; overflow: hidden;">
+              <div id="bar-soil-overview" style="height: 100%; width: 68.4%; background: var(--brand-emerald); border-radius: 4px;"></div>
+            </div>
+          </div>
         </div>
 
-        <h1 class="hero-title">
-          <span class="lime-phrase">Precision Hydroponics</span><br>in Phosphor Clarity.
-        </h1>
+        <!-- 2. Root Zone Temp -->
+        <div class="card-white-box">
+          <div>
+            <div class="card-header-flex">
+              <div>
+                <div class="card-label-small">ROOT ZONE TEMP</div>
+                <div class="card-sublabel-dim">Reservoir #2 Sub-Loop</div>
+              </div>
+              <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">Setpoint: 22.5°C</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+              <span class="stat-huge-number" id="val-temp-overview">22.8</span>
+              <span class="stat-unit-text">°C</span>
+            </div>
+          </div>
+          <div class="card-bottom-info">
+            <span>Min: 21.9°C</span>
+            <span style="color: var(--brand-emerald); font-weight: 700;">Δ +0.3°C nominal</span>
+            <span>Max: 23.1°C</span>
+          </div>
+        </div>
 
-        <p class="hero-subhead">
-          High-performance developer dashboard powered by Node.js &amp; Socket.IO. Autonomous solar-powered irrigation, real-time battery storage monitoring, and millisecond event telemetry.
-        </p>
+        <!-- 3. Solution pH Balance -->
+        <div class="card-white-box">
+          <div>
+            <div class="card-header-flex">
+              <div>
+                <div class="card-label-small">SOLUTION PH BALANCE</div>
+                <div class="card-sublabel-dim">Dual Glass Electrode 04</div>
+              </div>
+              <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">Range: 5.8 - 6.5</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+              <span class="stat-huge-number" id="val-ph-overview">6.25</span>
+              <span class="stat-unit-text">pH</span>
+            </div>
+          </div>
+          <div class="card-bottom-info">
+            <span style="color: var(--brand-emerald); font-weight: 700;">● Peristaltic Dosing: Locked &amp; Calibrated</span>
+          </div>
+        </div>
 
-        <div class="hero-actions">
-          <a href="#telemetry" class="btn-accent-pill">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-            Inspect Metrics
-          </a>
-          <button class="btn-ghost-outline" id="hero-quick-pump-btn">
-            Quick Override
+        <!-- 4. Water Recovery -->
+        <div class="card-white-box">
+          <div>
+            <div class="card-header-flex">
+              <div>
+                <div class="card-label-small">WATER RECOVERY</div>
+                <div class="card-sublabel-dim">Closed Loop Drainage</div>
+              </div>
+              <span class="badge-pill-green">98.2% Recycle</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+              <span class="stat-huge-number">418.5</span>
+              <span class="stat-unit-text">Liters</span>
+            </div>
+          </div>
+          <div>
+            <div style="height: 4px; width: 100%; background: var(--border-subtle); border-radius: 4px; overflow: hidden;">
+              <div style="height: 100%; width: 98%; background: var(--brand-emerald); border-radius: 4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lower Grid: Canopy Spline Chart & Actuator Quick Bus -->
+      <div class="overview-lower-grid">
+        <!-- Spline Chart -->
+        <div class="card-white-box">
+          <div class="panel-header-line">
+            <div>
+              <h3 class="panel-heading-title">Canopy Moisture &amp; VPD Telemetry Flow</h3>
+              <p class="panel-heading-subtitle">Sub-second aggregate across 8 capacitive probes &amp; digital psychrometer cluster</p>
+            </div>
+            <div class="view-mode-pill-tabs">
+              <button class="view-mode-btn active">1h Live</button>
+              <button class="view-mode-btn">6h</button>
+              <button class="view-mode-btn">24h</button>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem;">
+            <div style="display: flex; gap: 1rem;">
+              <span style="color: var(--brand-emerald);">● VPD (kPa)</span>
+              <span style="color: #0ea5e9;">● RH (%)</span>
+            </div>
+            <span style="color: var(--brand-emerald);">Tuning: Auto-Modulation Active</span>
+          </div>
+
+          <div class="chart-container-wrap chart-wrap-overview">
+            <canvas id="telemetryCanvas"></canvas>
+          </div>
+
+          <div class="bottom-three-metrics-row">
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">Air Enthalpy</div>
+              <div class="tile-metric-value">54.2 <span style="font-size: 0.75rem; font-weight: 500;">kJ/kg</span></div>
+            </div>
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">CO2 Enrichment</div>
+              <div class="tile-metric-value">845 <span style="font-size: 0.75rem; font-weight: 500;">ppm</span></div>
+            </div>
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">Air Speed Canopy</div>
+              <div class="tile-metric-value">0.42 <span style="font-size: 0.75rem; font-weight: 500;">m/s</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actuator Quick Bus -->
+        <div class="card-white-box">
+          <div class="panel-header-line">
+            <div>
+              <h3 class="panel-heading-title">Actuator Quick Bus</h3>
+              <p class="panel-heading-subtitle">Direct Relay &amp; Triac Overrides</p>
+            </div>
+            <span style="color: var(--brand-emerald); font-size: 1.2rem;">●</span>
+          </div>
+
+          <div class="quick-bus-list">
+            <div class="quick-bus-item">
+              <div class="quick-bus-meta">
+                <div class="quick-bus-icon">🔄</div>
+                <div>
+                  <div class="quick-bus-name">Main Loop Pump</div>
+                  <div class="quick-bus-status">Active (Duty: 85%)</div>
+                </div>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" id="quick-pump-toggle" checked>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <div class="quick-bus-item">
+              <div class="quick-bus-meta">
+                <div class="quick-bus-icon">🧪</div>
+                <div>
+                  <div class="quick-bus-name">Nutrient Doser A</div>
+                  <div class="quick-bus-status">Standby &bull; Next in 18m</div>
+                </div>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <div class="quick-bus-item">
+              <div class="quick-bus-meta">
+                <div class="quick-bus-icon">☁️</div>
+                <div>
+                  <div class="quick-bus-name">Mist Nebulizer</div>
+                  <div class="quick-bus-status">Auto-cycling &bull; 15s/300s</div>
+                </div>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" checked>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <div class="quick-bus-item">
+              <div class="quick-bus-meta">
+                <div class="quick-bus-icon">💡</div>
+                <div>
+                  <div class="quick-bus-name">UV-C Sterilizer</div>
+                  <div class="quick-bus-status">Online &bull; 254 nm Peak</div>
+                </div>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" checked>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card-bottom-info" style="margin-top: 1rem;">
+            <span>🛡️ Interlock: ISO Safety Matrix Engaged</span>
+            <a href="#actuators" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">Config</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         SECTION 2: METRICS (Hydroponic Sensor & Telemetry Metrics)
+         ======================================================================== -->
+    <section class="page-section-block" id="metrics">
+      <div class="view-header-row">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h2 class="view-headline">Hydroponic Sensor &amp; Telemetry Metrics</h2>
+            <span class="badge-pill-green">● STREAMING 1000ms</span>
+          </div>
+          <p class="view-subhead">
+            Sub-second sensor telemetry streams received over WebSockets / LoRaWAN gateway.
+          </p>
+        </div>
+        <div class="header-cta-group">
+          <select style="padding: 0.55rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background: var(--bg-card); font-weight: 700; color: var(--text-heading);">
+            <option>Zone 01 - Hydroponic Bio-Dome</option>
+            <option>Zone 02 - Nursery Rig</option>
+          </select>
+          <div class="view-mode-pill-tabs">
+            <button class="view-mode-btn active">Live Stream (1s)</button>
+            <button class="view-mode-btn">1 Hour</button>
+            <button class="view-mode-btn">24 Hours</button>
+            <button class="view-mode-btn">7 Days</button>
+          </div>
+          <button class="btn-figma-outline">
+            ⚙️ Calibrate Sensors
           </button>
         </div>
+      </div>
 
-        <!-- Signature 3D Glowing Cube Visual with Live Hydroponic Sprout -->
-        <div class="hero-visual-wrapper">
-          <div class="cube-halo"></div>
-          <svg class="isometric-cube-svg" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <!-- Cube face gradients -->
-              <linearGradient id="cubeTopGrad" x1="20" y1="32" x2="100" y2="78" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#2de271" stop-opacity="0.45"/>
-                <stop offset="100%" stop-color="#0a803c" stop-opacity="0.25"/>
-              </linearGradient>
-              <linearGradient id="cubeLeftGrad" x1="20" y1="55" x2="60" y2="125" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#14a354" stop-opacity="0.55"/>
-                <stop offset="100%" stop-color="#064e26" stop-opacity="0.35"/>
-              </linearGradient>
-              <linearGradient id="cubeRightGrad" x1="60" y1="78" x2="100" y2="125" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#222b25" stop-opacity="0.95"/>
-                <stop offset="100%" stop-color="#111713" stop-opacity="0.98"/>
-              </linearGradient>
+      <!-- Top 2 Chart Cards -->
+      <div class="metrics-top-charts-grid">
+        <!-- Substrate Moisture -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <div class="card-label-small">FDR MOISTURE ARRAY &bull; SUBSTRATE BED 04</div>
+              <h3 style="font-size: 1.15rem; font-weight: 800; margin-top: 4px;">Substrate Moisture &amp; Volumetric Water Content (% VWC)</h3>
+            </div>
+            <span class="badge-pill-green">((•)) Stable Mesh</span>
+          </div>
 
-              <!-- Sprout gradients -->
-              <linearGradient id="stemGrad" x1="60" y1="55" x2="60" y2="20" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#20b555"/>
-                <stop offset="100%" stop-color="#a6ff96"/>
-              </linearGradient>
-              <linearGradient id="leafLeftGrad" x1="58" y1="32" x2="36" y2="14" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#1ea84f"/>
-                <stop offset="50%" stop-color="#5be248"/>
-                <stop offset="100%" stop-color="#b6ffaa"/>
-              </linearGradient>
-              <linearGradient id="leafRightGrad" x1="59" y1="27" x2="82" y2="8" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#23b757"/>
-                <stop offset="50%" stop-color="#7fee64"/>
-                <stop offset="100%" stop-color="#d6ffd0"/>
-              </linearGradient>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0;">
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">Capacitive FDR Probe 01</div>
+              <div class="tile-metric-value"><span id="val-soil-metrics">68.4%</span> <span style="font-size: 0.7rem; font-weight: 600; color: var(--brand-emerald);">↗ Optimal VWC</span></div>
+            </div>
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">Capacitive FDR Probe 02</div>
+              <div class="tile-metric-value">66.8% <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Target: 65 - 72%</span></div>
+            </div>
+          </div>
 
-              <!-- Drop Glow Filter -->
-              <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur"/>
-                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-              </filter>
-            </defs>
+          <div class="chart-container-wrap chart-wrap-metrics">
+            <canvas id="metricsChart1"></canvas>
+          </div>
+        </div>
 
-            <!-- 1. BASE ISOMETRIC CUBE (Enlarged) -->
-            <!-- Top Face -->
-            <path d="M60 32 L100 55 L60 78 L20 55 Z" fill="url(#cubeTopGrad)" stroke="#7fee64" stroke-width="2.2" stroke-linejoin="round"/>
-            <!-- Left Face -->
-            <path d="M20 55 L60 78 L60 125 L20 102 Z" fill="url(#cubeLeftGrad)" stroke="#7fee64" stroke-width="2.2" stroke-linejoin="round"/>
-            <!-- Right Face -->
-            <path d="M60 78 L100 55 L100 102 L60 125 Z" fill="url(#cubeRightGrad)" stroke="#7fee64" stroke-width="2.2" stroke-linejoin="round"/>
+        <!-- Micro-Climate Dual Probes -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <div class="card-label-small">DUAL-SENSOR THERMAL PROBE MESH</div>
+              <h3 style="font-size: 1.15rem; font-weight: 800; margin-top: 4px;">Micro-Climate: Air Temp vs Root Reservoir Temp (°C)</h3>
+            </div>
+            <div style="display: flex; gap: 0.75rem; font-size: 0.75rem; font-weight: 700;">
+              <span style="color: #0ea5e9;">● Air (24.2°C)</span>
+              <span style="color: var(--brand-emerald);">● Reservoir (21.5°C)</span>
+            </div>
+          </div>
 
-            <!-- Internal Isometric Grid Lines & Center Coordinate Marker -->
-            <path d="M60 78 L60 32" stroke="#7fee64" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.85"/>
-            <path d="M20 55 L100 55" stroke="#7fee64" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0;">
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">Ambient Canopy Air</div>
+              <div class="tile-metric-value">24.2°C <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Target: 24.0°C (±1.5)</span></div>
+            </div>
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">Nutrient Reservoir Root Bed</div>
+              <div class="tile-metric-value">21.5°C <span style="font-size: 0.7rem; font-weight: 600; color: var(--brand-emerald);">Chiller Idle (Nominal)</span></div>
+            </div>
+          </div>
 
-            <!-- Corner Accent Nodes -->
-            <circle cx="60" cy="78" r="2.8" fill="#7fee64"/>
-            <circle cx="60" cy="125" r="2.2" fill="#7fee64"/>
-            <circle cx="20" cy="102" r="2.2" fill="#7fee64"/>
-            <circle cx="100" cy="102" r="2.2" fill="#7fee64"/>
-
-            <!-- Hydroponic Growth Collar / Plant Pod (Pusat Tunas) -->
-            <ellipse cx="60" cy="55" rx="9" ry="5" fill="#0d3319" stroke="#7fee64" stroke-width="1.4" opacity="0.9"/>
-            <ellipse cx="60" cy="55" rx="5" ry="2.8" fill="#7fee64" fill-opacity="0.3"/>
-
-            <!-- 2. TUNAS HIDROPONIK (HYDROPONIC PLANT SPROUT) -->
-            <g class="sprout-group">
-              <!-- Stem (Batang Tunas) -->
-              <path d="M60 55 C60 42, 57 30, 60 19" stroke="url(#stemGrad)" stroke-width="3" stroke-linecap="round"/>
-              <path d="M60 55 C60 42, 57 30, 60 19" stroke="#ffffff" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
-
-              <!-- Left Leaf (Daun Kiri Tunas) -->
-              <g>
-                <path d="M58 32 C48 30, 34 23, 36 14 C43 13, 53 19, 59 26 Z" 
-                      fill="url(#leafLeftGrad)" stroke="#7fee64" stroke-width="1.6" stroke-linejoin="round"/>
-                <!-- Left Leaf Central Vein -->
-                <path d="M58 31 C49 25, 41 19, 37 15" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.75"/>
-                <!-- Dewdrop Highlight -->
-                <circle cx="36" cy="14" r="1.4" fill="#ffffff" filter="url(#neonGlow)"/>
-              </g>
-
-              <!-- Right Leaf (Daun Kanan Tunas) -->
-              <g>
-                <path d="M59 27 C68 25, 84 17, 82 8 C74 7, 65 14, 59 21 Z" 
-                      fill="url(#leafRightGrad)" stroke="#7fee64" stroke-width="1.6" stroke-linejoin="round"/>
-                <!-- Right Leaf Central Vein -->
-                <path d="M59 26 C69 20, 77 13, 81 9" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.75"/>
-                <!-- Dewdrop Highlight -->
-                <circle cx="82" cy="8" r="1.6" fill="#ffffff" filter="url(#neonGlow)"/>
-              </g>
-
-              <!-- Center Young Shoot (Pucuk Daun Muda di Ujung Batang) -->
-              <path d="M60 20 C58 15, 59 8, 60.5 5 C62 8, 62.5 15, 60 20 Z" 
-                    fill="#ddffdc" stroke="#7fee64" stroke-width="1.2"/>
-              <circle cx="60.5" cy="5" r="1.2" fill="#ffffff" filter="url(#neonGlow)"/>
-            </g>
-          </svg>
+          <div class="chart-container-wrap chart-wrap-metrics">
+            <canvas id="metricsChart2"></canvas>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
 
-  <hr class="divider">
+      <!-- Middle 3 Analytical Cards -->
+      <div class="metrics-three-cards-row">
+        <!-- 1. pH & EC -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <div class="card-label-small">DOSING &amp; IONIC BALANCE</div>
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">pH &amp; Electrical Conductivity (EC)</h4>
+            </div>
+            <span class="badge-pill-green">OPTIMAL</span>
+          </div>
 
-  <!-- 3-Column Workload & Metric Cards -->
-  <section class="section" id="telemetry">
-    <div class="container">
-      <div class="eyebrow">LIVE TELEMETRY // SENSOR NODES</div>
-      <h2 style="font-size: var(--text-heading); margin-bottom: var(--spacing-32);">Environmental Conditions</h2>
+          <div class="circular-gauge-container">
+            <div class="circular-gauge-svg-wrap">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg-subtle)" stroke-width="8"></circle>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--brand-emerald)" stroke-width="8" stroke-dasharray="264" stroke-dashoffset="66" stroke-linecap="round"></circle>
+              </svg>
+              <div class="gauge-center-label">
+                <span class="gauge-center-number">6.35</span>
+                <span class="gauge-center-sub">pH SAFE</span>
+              </div>
+            </div>
+            <div style="flex: 1; font-size: 0.75rem; line-height: 1.6;">
+              <div style="display: flex; justify-content: space-between;"><span>pH Safe Window:</span> <strong>5.8 – 6.5</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span>Acid Buffer Res.:</span> <strong>92% Cap</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span>Electrode Drift:</span> <strong>±0.02 pH</strong></div>
+            </div>
+          </div>
 
-      <div class="grid-4col">
-        <!-- Card 1: Soil Moisture -->
-        <div class="workload-card" id="card-soil">
-          <div class="card-icon-slot">
-            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-            </svg>
+          <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px;">
+              <span>Electrical Conductivity</span>
+              <span style="color: var(--brand-emerald); font-size: 0.95rem;">2.18 <span style="font-size: 0.75rem;">mS/cm</span></span>
+            </div>
+            <div style="height: 6px; width: 100%; background: var(--bg-subtle); border-radius: 4px; overflow: hidden;">
+              <div style="height: 100%; width: 72%; background: var(--brand-emerald);"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-subtle); margin-top: 4px;">
+              <span>0.5 Weak</span>
+              <span style="color: var(--brand-emerald); font-weight: 700;">Mineral Saturation Ideal</span>
+              <span>3.0 High</span>
+            </div>
           </div>
-          <div class="card-title">
-            <span>Soil Moisture</span>
-            <span class="card-status-badge" id="soil-badge">OPTIMAL</span>
-          </div>
-          <div class="card-value">
-            <span id="val-soil">--</span><span class="card-unit">%</span>
-          </div>
-          <div class="card-progress-track">
-            <div class="card-progress-bar" id="soil-bar" style="width: 0%;"></div>
-          </div>
-          <p class="card-description">
-            Analog capacitive sensor (ADC 0-4095). Trigger pump if below threshold.
-          </p>
         </div>
 
-        <!-- Card 2: Air Humidity -->
-        <div class="workload-card" id="card-humidity">
-          <div class="card-icon-slot">
-            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
-            </svg>
+        <!-- 2. NPK Macro-Nutrient Profile -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <div class="card-label-small">SPECTROMETRIC PROBES</div>
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">NPK Macro-Nutrient Profile</h4>
+            </div>
+            <span class="badge-pill-green">REALTIME</span>
           </div>
-          <div class="card-title">
-            <span>Air Humidity (RH)</span>
-            <span class="card-status-badge" id="hum-badge">NORMAL</span>
+          <p style="font-size: 0.7rem; color: var(--text-subtle);">Optical absorption telemetry &bull; Ionic ppm</p>
+
+          <div class="npk-progress-stack">
+            <div class="npk-row-item">
+              <div class="npk-row-meta">
+                <span style="color: var(--brand-emerald);">● Nitrogen (N)</span>
+                <span><strong>185 ppm</strong> / 180 Target (102%)</span>
+              </div>
+              <div class="npk-bar-track">
+                <div class="npk-bar-fill" style="width: 100%; background: var(--brand-emerald);"></div>
+              </div>
+            </div>
+
+            <div class="npk-row-item">
+              <div class="npk-row-meta">
+                <span style="color: #0ea5e9;">● Phosphorus (P)</span>
+                <span><strong>48 ppm</strong> / 50 Target (96%)</span>
+              </div>
+              <div class="npk-bar-track">
+                <div class="npk-bar-fill" style="width: 96%; background: #0ea5e9;"></div>
+              </div>
+            </div>
+
+            <div class="npk-row-item">
+              <div class="npk-row-meta">
+                <span style="color: #1e3a8a;">● Potassium (K)</span>
+                <span><strong>225 ppm</strong> / 220 Target (102%)</span>
+              </div>
+              <div class="npk-bar-track">
+                <div class="npk-bar-fill" style="width: 100%; background: #1e3a8a;"></div>
+              </div>
+            </div>
           </div>
-          <div class="card-value">
-            <span id="val-humidity">--</span><span class="card-unit">%</span>
+
+          <div style="background: var(--bg-nested); padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); font-size: 0.75rem; font-weight: 700; color: var(--brand-emerald); text-align: center;">
+            ⚖️ Ca/Mg Ionic Ratio: 3:1 Balanced
           </div>
-          <div class="card-progress-track">
-            <div class="card-progress-bar" id="hum-bar" style="width: 0%;"></div>
-          </div>
-          <p class="card-description">
-            DHT22 digital relative humidity. Low RH accelerates transpiration drying.
-          </p>
         </div>
 
-        <!-- Card 3: Air Temperature -->
-        <div class="workload-card" id="card-temp">
-          <div class="card-icon-slot">
-            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
-            </svg>
+        <!-- 3. VPD & Transpiration -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <div class="card-label-small">ATMOSPHERIC TRANSPIRATION</div>
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">Vapor Pressure Deficit (VPD)</h4>
+            </div>
+            <span class="badge-pill-green">LEAF SAFE</span>
           </div>
-          <div class="card-title">
-            <span>Ambient Temp</span>
-            <span class="card-status-badge" id="temp-badge">COMFORT</span>
-          </div>
-          <div class="card-value">
-            <span id="val-temp">--</span><span class="card-unit">°C</span>
-          </div>
-          <div class="card-progress-track">
-            <div class="card-progress-bar" id="temp-bar" style="width: 0%; background-color: #ffc53d;"></div>
-          </div>
-          <p class="card-description">
-            Thermal surveillance around canopy zone. Healthy band: 24°C - 32°C.
-          </p>
-        </div>
 
-        <!-- Card 4: Solar Battery & Accumulator -->
-        <div class="workload-card" id="card-battery">
-          <div class="card-icon-slot">
-            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect>
-              <line x1="22" y1="11" x2="22" y2="13"></line>
-              <line x1="7" y1="12" x2="11" y2="12"></line>
-            </svg>
+          <div style="text-align: center; margin: 0.75rem 0;">
+            <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase;">CURRENT TRANSPIRATION FORCE</div>
+            <div style="font-family: var(--font-title); font-size: 2.25rem; font-weight: 800; color: var(--text-heading); line-height: 1;">1.15 <span style="font-size: 0.9rem; font-weight: 600;">kPa</span></div>
+            <span class="badge-pill-green" style="margin-top: 4px;">● Healthy Vegetative Zone (0.8 – 1.2 kPa)</span>
           </div>
-          <div class="card-title">
-            <span>Solar Battery</span>
-            <span class="card-status-badge" id="battery-badge" style="color: var(--color-lime-pulse);">CHARGING</span>
-          </div>
-          <div class="card-value">
-            <span id="val-battery">--</span><span class="card-unit">%</span>
-          </div>
-          <div class="card-progress-track">
-            <div class="card-progress-bar" id="battery-bar" style="width: 0%; background-color: var(--color-lime-pulse);"></div>
-          </div>
-          <p class="card-description">
-            Aki 12V: <strong id="val-battery-volt" style="color: var(--color-phosphor-white);">--</strong> V &bull; PV: <strong id="val-solar-volt" style="color: var(--color-lime-pulse);">--</strong> V (Cutoff &lt;15%)
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- Control & Actuator Grid -->
-  <section class="section" id="actuators" style="background-color: var(--color-ground-iron);">
-    <div class="container">
-      <div class="eyebrow">ACTUATOR MATRIX // RELAY CONTROL</div>
-      <h2 style="font-size: var(--text-heading); margin-bottom: var(--spacing-8);">Submersible Pump Control</h2>
-      <p style="color: var(--color-sage-60); margin-bottom: var(--spacing-24);">Manage autonomous control loop or trigger emergency manual overrides.</p>
-
-      <div class="control-grid">
-        <!-- Irrigation Controller -->
-        <div class="control-panel">
-
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: var(--text-body-sm); color: var(--color-moss-70); font-weight: 500;">CONTROL MODE</span>
-            <div class="mode-switch-group">
-              <button class="mode-btn active" id="mode-auto-btn">AUTONOMOUS</button>
-              <button class="mode-btn" id="mode-manual-btn">MANUAL OVERRIDE</button>
+          <div class="vpd-spectrum-container">
+            <div class="vpd-spectrum-bar">
+              <div class="vpd-spectrum-thumb" style="left: 55%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-subtle); margin-top: 6px;">
+              <span>0.4 Under</span>
+              <span style="font-weight: 700; color: var(--brand-emerald);">Target: 1.10</span>
+              <span>1.8 Stress</span>
             </div>
           </div>
 
-          <div class="relay-status-display">
-            <div class="relay-state-label">
-              <div class="relay-led" id="pump-led"></div>
-              <div>
-                <div class="relay-title" id="pump-text">PUMP STANDBY</div>
-                <div class="relay-subtitle" id="pump-sub">GPIO 2 (DIGITAL LOW)</div>
-              </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">Relative Humidity</div>
+              <div class="tile-metric-value" style="font-size: 0.95rem;">68.2% <span style="font-size: 0.65rem; color: var(--text-muted);">RH</span></div>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button class="btn-primary-filled" id="toggle-pump-action" style="padding: 10px 16px;">
-                TOGGLE PUMP
-              </button>
-              <button class="btn-success-outline" id="panel-resume-auto-btn" style="display: none;">
-                KEMBALI OTOMATIS
-              </button>
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">Calculated Dew Point</div>
+              <div class="tile-metric-value" style="font-size: 0.95rem;">17.8°C</div>
             </div>
           </div>
-
-          <p style="font-size: var(--text-caption); color: var(--color-sage-40);">
-            * In Autonomous mode, the server &amp; ESP32 will enforce: Pump activates when Soil &lt; 35% (Critical) or when Soil &lt; 50% AND Air RH &lt; 60%.
-          </p>
-        </div>
-
-        <!-- Threshold Reconfiguration -->
-        <div class="control-panel">
-          <span style="font-size: var(--text-body-sm); color: var(--color-moss-70); font-weight: 500;">ALGORITHM THRESHOLDS</span>
-          
-          <form id="thresholds-form" class="threshold-list">
-            <div class="threshold-row">
-              <div class="threshold-info">
-                <span class="threshold-name">Safe Moisture Limit</span>
-                <span class="threshold-desc">Soil &gt;= limit forces pump to stop</span>
-              </div>
-              <div class="threshold-input-wrap">
-                <input type="number" id="inp-soil-safe" class="threshold-input" value="50" min="10" max="90">
-                <span style="font-family: var(--font-mono); font-size: 12px; color: var(--color-sage-40);">%</span>
-              </div>
-            </div>
-
-            <div class="threshold-row">
-              <div class="threshold-info">
-                <span class="threshold-name">Critical Moisture Limit</span>
-                <span class="threshold-desc">Soil &lt; limit triggers immediate watering</span>
-              </div>
-              <div class="threshold-input-wrap">
-                <input type="number" id="inp-soil-crit" class="threshold-input" value="35" min="5" max="80">
-                <span style="font-family: var(--font-mono); font-size: 12px; color: var(--color-sage-40);">%</span>
-              </div>
-            </div>
-
-            <div class="threshold-row">
-              <div class="threshold-info">
-                <span class="threshold-name">Dry Air RH Limit</span>
-                <span class="threshold-desc">Triggers watering when soil is moderate</span>
-              </div>
-              <div class="threshold-input-wrap">
-                <input type="number" id="inp-air-dry" class="threshold-input" value="60" min="20" max="95">
-                <span style="font-family: var(--font-mono); font-size: 12px; color: var(--color-sage-40);">%</span>
-              </div>
-            </div>
-
-            <button type="submit" class="btn-primary-filled" style="width: 100%; margin-top: 8px;">
-              Apply Parameters
-            </button>
-          </form>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- Realtime Time-series Chart -->
-  <section class="section" id="chart-section">
-    <div class="container">
-      <div class="chart-container">
-        <div class="chart-header">
+      <!-- Bottom Mesh Health Table -->
+      <div class="mesh-table-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <div class="eyebrow" style="margin-bottom: 4px;">TELEMETRY TIMELINE</div>
-            <h3 style="font-size: var(--text-heading-sm); font-weight: 500;">40-Point Vector Telemetry</h3>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 800;">Sensor Health &amp; Gateway Node Mesh</h3>
+              <span class="badge-pill-green">14 Synced Probes</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Per-sensor battery voltage, LoRa signal telemetry, calibration drift and heartbeat ping.</p>
           </div>
-          <div class="chart-legend">
-            <div class="legend-item">
-              <div class="legend-dot" style="background-color: var(--color-lime-pulse);"></div>
-              <span style="color: var(--color-lime-pulse);">Soil %</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot" style="background-color: var(--color-sage-60);"></div>
-              <span style="color: var(--color-sage-60);">Air RH %</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-dot" style="background-color: #ffc53d;"></div>
-              <span style="color: #ffc53d;">Temp (°C * 2)</span>
-            </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <input type="text" placeholder="Filter probe by Node ID..." style="padding: 0.45rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background: var(--bg-card); font-size: 0.75rem;">
+            <button class="btn-figma-outline" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">Export CSV</button>
           </div>
         </div>
 
-        <div class="canvas-wrapper">
-          <canvas id="telemetryCanvas"></canvas>
+        <table class="mesh-table">
+          <thead>
+            <tr>
+              <th>NODE IDENTIFIER</th>
+              <th>SENSOR ARRAY TYPE</th>
+              <th>PROBE DEPTH / PLACEMENT</th>
+              <th>BATTERY / SOLAR FLOAT</th>
+              <th>LORA SIGNAL (RSSI)</th>
+              <th>HEARTBEAT</th>
+              <th>CALIBRATION STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>● NODE-BIO-09A</strong></td>
+              <td>Volumetric Water &amp; Salinity<br><span style="color: var(--text-subtle); font-size: 0.7rem;">FDR Teros 12 Array</span></td>
+              <td>15 cm &bull; Rockwool Slab 4</td>
+              <td>⚡ <strong>3.65V</strong> <span style="font-size: 0.7rem; color: var(--brand-emerald);">(Solar 100%)</span></td>
+              <td>📶 <strong>-64 dBm</strong> <span style="color: var(--brand-emerald);">[Excellent]</span></td>
+              <td>480ms ago</td>
+              <td><span class="badge-pill-green">NORMAL / CALIBRATED</span></td>
+            </tr>
+            <tr>
+              <td><strong>● NODE-BIO-09B</strong></td>
+              <td>In-line Potentiometric pH Probe<br><span style="color: var(--text-subtle); font-size: 0.7rem;">Glass Bulb Double Junction</span></td>
+              <td>Manifold 01 Return Line</td>
+              <td>⚡ <strong>3.62V</strong> <span style="font-size: 0.7rem; color: var(--text-muted);">(Float)</span></td>
+              <td>📶 <strong>-68 dBm</strong> <span style="color: var(--brand-emerald);">[Strong]</span></td>
+              <td>920ms ago</td>
+              <td><span class="badge-pill-green">NORMAL / CALIBRATED</span></td>
+            </tr>
+            <tr>
+              <td><strong>● NODE-BIO-14C</strong></td>
+              <td>Toroidal Conductivity (EC)<br><span style="color: var(--text-subtle); font-size: 0.7rem;">Inductive Mineral Sensor</span></td>
+              <td>Main Reservoir Tank C</td>
+              <td>⚡ <strong>3.58V</strong> <span style="font-size: 0.7rem; color: var(--text-muted);">(Grid Synced)</span></td>
+              <td>📶 <strong>-59 dBm</strong> <span style="color: var(--brand-emerald);">[Excellent]</span></td>
+              <td>340ms ago</td>
+              <td><span class="badge-pill-green">NORMAL / CALIBRATED</span></td>
+            </tr>
+            <tr>
+              <td><strong>● NODE-BIO-22E</strong></td>
+              <td>Spectroscopic NPK In-line Probe<br><span style="color: var(--text-subtle); font-size: 0.7rem;">Near-Infrared Optical Array</span></td>
+              <td>Fertigation Injection Line</td>
+              <td>⚡ <strong>3.64V</strong> <span style="font-size: 0.7rem; color: var(--brand-emerald);">(Solar 100%)</span></td>
+              <td>📶 <strong>-78 dBm</strong> <span style="color: #0ea5e9;">[Good]</span></td>
+              <td>1,200ms ago</td>
+              <td><span style="font-size: 0.7rem; font-weight: 700; color: #475569; background: var(--bg-subtle); padding: 0.2rem 0.5rem; border-radius: 4px;">CALIBRATION IN 4d</span></td>
+            </tr>
+            <tr>
+              <td><strong>● NODE-ENV-01T</strong></td>
+              <td>Aspirated Psychrometer / Temp<br><span style="color: var(--text-subtle); font-size: 0.7rem;">Platinum RTD PT1000 + Capacitive</span></td>
+              <td>Canopy Mid-Level (1.8m)</td>
+              <td>⚡ <strong>3.61V</strong> <span style="font-size: 0.7rem; color: var(--brand-emerald);">(Solar 98%)</span></td>
+              <td>📶 <strong>-61 dBm</strong> <span style="color: var(--brand-emerald);">[Excellent]</span></td>
+              <td>210ms ago</td>
+              <td><span class="badge-pill-green">NORMAL / CALIBRATED</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+          <span>Packet Delivery Ratio: <strong>99.98%</strong> &bull; Gateway Up-Time: <strong>42d 18h</strong></span>
+          <span style="color: var(--brand-emerald); font-weight: 700;">● Zero Telemetry Dropouts Detected</span>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Daily Track Record & Excel Export Section -->
-  <section class="section" id="records-section" style="padding-bottom: var(--spacing-32);">
-    <div class="container">
-      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--spacing-24); flex-wrap: wrap; gap: 16px;">
+    <!-- ========================================================================
+         SECTION 3: ACTUATORS (Automated Actuator & Hardware Controller Matrix)
+         ======================================================================== -->
+    <section class="page-section-block" id="actuators">
+      <div class="view-header-row">
         <div>
-          <div class="eyebrow">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-            </svg>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--brand-emerald); letter-spacing: 0.05em;">
+            HYDROPONIC HARDWARE MATRIX v4.2 &bull; BUS ACTIVE: CAN-OPEN 500kbps
+          </div>
+          <h2 class="view-headline" style="margin-top: 4px;">Automated Actuator &amp; Hardware Controller Matrix</h2>
+          <p class="view-subhead">
+            Direct solenoid valve sequencing, variable frequency drive pump modulation, and autonomous microclimate actuators.
+          </p>
+        </div>
+        <div class="header-cta-group">
+          <div class="badge-pill-green" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
+            🛡️ SAFETY INTERLOCK: SECURED &bull; ALL 8 RESPONDING
+          </div>
+          <button class="btn-figma-outline">
+            🔄 Sync Hardware State
+          </button>
+          <button class="btn-figma-danger" id="emergency-shutoff-btn">
+            🛑 EMERGENCY SHUTOFF
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Summary Stat Boxes -->
+      <div class="actuators-summary-row">
+        <div class="card-white-box" style="padding: 1rem 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div class="card-label-small">VALVE STATUS</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-heading);">2 Open <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">/ 2 Closed</span></div>
+            </div>
+            <div style="font-size: 1.5rem; color: var(--brand-emerald);">🚰</div>
+          </div>
+        </div>
+
+        <div class="card-white-box" style="padding: 1rem 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div class="card-label-small">AGGREGATE VFD LOAD</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-heading);">248 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Watts</span></div>
+            </div>
+            <div style="font-size: 1.5rem; color: #0ea5e9;">⚡</div>
+          </div>
+        </div>
+
+        <div class="card-white-box" style="padding: 1rem 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div class="card-label-small">DISPATCH LATENCY</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--brand-emerald);">8.4 <span style="font-size: 0.85rem; font-weight: 600;">ms</span></div>
+            </div>
+            <div style="font-size: 1.5rem; color: var(--brand-emerald);">📉</div>
+          </div>
+        </div>
+
+        <div class="card-white-box" style="padding: 1rem 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div class="card-label-small">AUTONOMOUS RUNTIME</div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-heading);">418 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">hrs clean</span></div>
+            </div>
+            <div style="font-size: 1.5rem; color: var(--text-muted);">⚙️</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Actuator Matrix Grid Panels -->
+      <div class="actuators-matrix-grid-4">
+        <!-- 1. Irrigation & Drip Solenoids -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 800;">Irrigation &amp; Drip Solenoids</h3>
+              <p style="font-size: 0.75rem; color: var(--text-muted);">High-cycle 24V DC zero-bleed pilot valves</p>
+            </div>
+            <span class="badge-pill-green">4 OF 4 COMMUNICATING</span>
+          </div>
+
+          <div style="margin: 1rem 0;">
+            <div class="solenoid-row-item">
+              <div>
+                <div style="font-size: 0.8125rem; font-weight: 700;">● Zone 1 &bull; Bio-Dome Overhead Mist</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Cycle: <strong>15s ON / 45s OFF</strong> &bull; Flow: <strong style="color: var(--brand-emerald);">3.8 L/min</strong></div>
+              </div>
+              <button class="btn-state-on">ON</button>
+            </div>
+
+            <div class="solenoid-row-item">
+              <div>
+                <div style="font-size: 0.8125rem; font-weight: 700;">● Zone 2 &bull; Deep Water Culture (DWC) Main Feed</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Flow: <strong style="color: var(--brand-emerald);">12.4 L/min</strong> &bull; Pressure: <strong>2.8 Bar</strong></div>
+              </div>
+              <button class="btn-state-on">ON</button>
+            </div>
+
+            <div class="solenoid-row-item">
+              <div>
+                <div style="font-size: 0.8125rem; font-weight: 700;">● Zone 3 &bull; Seedling Nursery Micro-Drip</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Next scheduled run: <strong>14:00 (In 42 mins)</strong> &bull; Preset: 250 mL</div>
+              </div>
+              <button class="btn-state-off">OFF</button>
+            </div>
+
+            <div class="solenoid-row-item">
+              <div>
+                <div style="font-size: 0.8125rem; font-weight: 700;">🔒 Zone 4 &bull; Flush &amp; Drain Bypass</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Interlocked &bull; Emergency discharge only</div>
+              </div>
+              <button class="btn-state-locked">LOCKED</button>
+            </div>
+          </div>
+
+          <div class="card-bottom-info">
+            <span>Pressure relief valve: 3.4 Bar threshold</span>
+            <a href="#" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">SOLENOID CONFIG</a>
+          </div>
+        </div>
+
+        <!-- 2. Variable Speed Pumps (VFD) -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 800;">Variable Speed Pumps (VFD)</h3>
+              <p style="font-size: 0.75rem; color: var(--text-muted);">Modulated frequency drives &amp; peristaltic precision dosing</p>
+            </div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-heading); background: var(--bg-subtle); padding: 0.2rem 0.6rem; border-radius: 4px;">TOTAL DRAW: 212W</span>
+          </div>
+
+          <div style="margin: 1rem 0;">
+            <div style="padding: 0.75rem 1rem; background: var(--bg-nested); border-radius: var(--radius-md); border: 1px solid var(--border-card); margin-bottom: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700;">
+                <div>Primary Recirculation Pump <span class="badge-pill-green" style="font-size: 0.65rem;">CLOSED-LOOP</span></div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">1,750 RPM | 185W | 42°C</span>
+              </div>
+              <div class="vfd-slider-row">
+                <button class="vfd-btn-step">-</button>
+                <input type="range" class="vfd-slider-input" min="0" max="100" value="78">
+                <button class="vfd-btn-step">+</button>
+                <strong style="font-size: 0.85rem; width: 35px; text-align: right;">78%</strong>
+              </div>
+            </div>
+
+            <div style="padding: 0.75rem 1rem; background: var(--bg-nested); border-radius: var(--radius-md); border: 1px solid var(--border-card); margin-bottom: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700;">
+                <div>Peristaltic Dosing Pump A (Macro-N) <span style="font-size: 0.65rem; padding: 2px 6px; background: #e0f2fe; color: #0284c7; border-radius: 4px;">CALIBRATED</span></div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">42 RPM | 18 mL/min</span>
+              </div>
+              <div class="vfd-slider-row">
+                <button class="vfd-btn-step">-</button>
+                <input type="range" class="vfd-slider-input" min="0" max="100" value="35">
+                <button class="vfd-btn-step">+</button>
+                <strong style="font-size: 0.85rem; width: 35px; text-align: right;">35%</strong>
+              </div>
+            </div>
+
+            <div style="padding: 0.75rem 1rem; background: var(--bg-nested); border-radius: var(--radius-md); border: 1px solid var(--border-card);">
+              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700;">
+                <div>pH Down Dosing Pump B (Phosphoric 10%) <span class="badge-pill-green" style="font-size: 0.65rem;">MICRO-PULSE</span></div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">14 RPM | 4.2 mL/min</span>
+              </div>
+              <div class="vfd-slider-row">
+                <button class="vfd-btn-step">-</button>
+                <input type="range" class="vfd-slider-input" min="0" max="100" value="12">
+                <button class="vfd-btn-step">+</button>
+                <strong style="font-size: 0.85rem; width: 35px; text-align: right;">12%</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-bottom-info">
+            <span>Anti-cavitation sensor feedback: <strong>Normal</strong></span>
+            <a href="#" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">FLOW TELEMETRY</a>
+          </div>
+        </div>
+
+        <!-- 3. Climate & Environment Actuators -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 800;">Climate &amp; Environment Actuators</h3>
+              <p style="font-size: 0.75rem; color: var(--text-muted);">Atmospheric control, louvres, extraction, and PAR lighting</p>
+            </div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 0.2rem 0.6rem; border-radius: 4px;">VPD OPTIMIZED</span>
+          </div>
+
+          <div style="margin: 1rem 0;">
+            <div style="margin-bottom: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700;">
+                <span>Bio-Dome Retractable Roof Louvre</span>
+                <span style="color: var(--brand-emerald);">45% Deployed</span>
+              </div>
+              <div class="segmented-percent-group">
+                <button class="segmented-percent-btn">0% (Shut)</button>
+                <button class="segmented-percent-btn">25%</button>
+                <button class="segmented-percent-btn active">45%</button>
+                <button class="segmented-percent-btn">75%</button>
+                <button class="segmented-percent-btn">100%</button>
+              </div>
+            </div>
+
+            <div class="solenoid-row-item">
+              <div>
+                <div style="font-size: 0.8125rem; font-weight: 700;">Dual Exhaust Extraction Fans</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Speed: <strong>60% (PWM)</strong> &bull; Output: <strong>850 CFM</strong></div>
+              </div>
+              <span class="badge-pill-green">● RUNNING</span>
+            </div>
+
+            <div class="solenoid-row-item">
+              <div>
+                <div style="font-size: 0.8125rem; font-weight: 700;">High-Pressure Ultrasonic Fogger</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Threshold trigger &bull; RH &lt; 60%</div>
+              </div>
+              <span class="badge-pill-green">AUTO</span>
+            </div>
+
+            <div class="solenoid-row-item">
+              <div style="flex: 1;">
+                <div style="font-size: 0.8125rem; font-weight: 700;">Full-Spectrum LED Grow Array</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">85% Dimmer &bull; 660nm Peak</div>
+              </div>
+              <input type="range" class="vfd-slider-input" min="0" max="100" value="85" style="max-width: 140px;">
+            </div>
+          </div>
+
+          <div class="card-bottom-info">
+            <span>Internal Air Velocity: <strong>0.38 m/s</strong></span>
+            <a href="#" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">CLIMATE LOGS</a>
+          </div>
+        </div>
+
+        <!-- 4. Solar Cluster & Battery Storage -->
+        <div class="card-white-box">
+          <div class="card-header-flex">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 800;">Solar Cluster &amp; Battery Storage</h3>
+              <p style="font-size: 0.75rem; color: var(--text-muted);">Off-grid direct microgrid power budget</p>
+            </div>
+            <span class="badge-pill-green">100% AUTONOMOUS</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 0.75rem 0;">
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">PHOTOVOLTAIC GEN</div>
+              <div style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 800; color: var(--brand-emerald);">+1.84 <span style="font-size: 0.7rem; font-weight: 600;">kW Active</span></div>
+            </div>
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">ACTUATOR DEMAND</div>
+              <div style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 800; color: var(--text-heading);">0.62 <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">kW Load</span></div>
+            </div>
+            <div class="tile-metric-box">
+              <div class="tile-metric-label">NET BATTERY SURPLUS</div>
+              <div style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 800; color: var(--brand-emerald);">+1.22 <span style="font-size: 0.7rem; font-weight: 600;">kW Charging</span></div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-nested); border-radius: var(--radius-md); border: 1px solid var(--border-card); margin-bottom: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--brand-emerald); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                94%
+              </div>
+              <div>
+                <div style="font-size: 0.8125rem; font-weight: 700;">LiFePO4 48V Matrix</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">SOC: <strong>94.5%</strong> &bull; Reserve: <strong style="color: var(--brand-emerald);">26.8 hrs</strong> &bull; Delta: &plusmn;0.003V</div>
+              </div>
+            </div>
+            <div style="font-family: var(--font-title); font-size: 1.1rem; font-weight: 800;">53.2 V <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">Peak Voltage</div></div>
+          </div>
+
+          <div class="card-bottom-info">
+            <span>Inverter Efficiency: <strong>96.8%</strong> &bull; Grid: <strong>DISCONNECTED</strong></span>
+            <a href="#" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">INVERTER METRICS</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hardware Telemetry & Actuation Audit Log -->
+      <div class="mesh-table-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 800;">Hardware Telemetry &amp; Actuation Audit Log</h3>
+              <span class="badge-pill-green">● STREAMING 100Hz</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Immutable ring-buffer of solenoid closures, PWM transitions, and safety checks.</p>
+          </div>
+          <button class="btn-figma-outline" style="font-size: 0.75rem; padding: 0.45rem 0.85rem;">EXPORT CSV</button>
+        </div>
+
+        <table class="mesh-table">
+          <thead>
+            <tr>
+              <th>TIMESTAMP (UTC)</th>
+              <th>SUBSYSTEM NODE</th>
+              <th>ACTION DISPATCHED</th>
+              <th>TRIGGER GENESIS</th>
+              <th>CONFIRMATION TELEMETRY</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>13:42:19.04</code></td>
+              <td><strong>Valve #2 (DWC Main Feed)</strong></td>
+              <td>Solenoid OPEN (24V latch)</td>
+              <td>Autonomous: Volumetric Water Content &lt; 65%</td>
+              <td>Flow verified: <strong>12.4 L/min</strong></td>
+              <td><span class="badge-pill-green">SUCCESS</span></td>
+            </tr>
+            <tr>
+              <td><code>13:30:00.12</code></td>
+              <td><strong>LED Light Array (Bay 4)</strong></td>
+              <td>Spectrum shifted to FLOWERING</td>
+              <td>Circadian Schedule: Target DLI 28.4 mol/m²/d</td>
+              <td>660nm Deep Red @ 85% Dimmer</td>
+              <td><span class="badge-pill-green">SUCCESS</span></td>
+            </tr>
+            <tr>
+              <td><code>13:15:02.89</code></td>
+              <td><strong>VFD Recirc Pump 1</strong></td>
+              <td>Modulation target adjusted (72% &rarr; 78%)</td>
+              <td>Closed-loop Dissolved Oxygen Compensation</td>
+              <td>1,750 RPM stable (42°C head)</td>
+              <td><span class="badge-pill-green">SUCCESS</span></td>
+            </tr>
+            <tr>
+              <td><code>12:59:45.31</code></td>
+              <td><strong>Peristaltic Pump B</strong></td>
+              <td>Dosed 14 mL Phosphoric 10%</td>
+              <td>pH Sensor Alert: Solution drifted to 6.58 pH</td>
+              <td>Target reached: <strong>5.92 pH</strong></td>
+              <td><span class="badge-pill-green">SUCCESS</span></td>
+            </tr>
+            <tr>
+              <td><code>12:45:00.00</code></td>
+              <td><strong>Extraction Fans PWM</strong></td>
+              <td>Stepped to 60% Duty Cycle</td>
+              <td>Autonomous: Vapor Pressure Deficit (VPD) regulation</td>
+              <td>Airflow nominal: <strong>850 CFM</strong></td>
+              <td><span class="badge-pill-green">SUCCESS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         SECTION 4: TRENDS & DEEP DIVE ANALYTICS
+         ======================================================================== -->
+    <section class="page-section-block" id="trends">
+      <div class="view-header-row">
+        <div>
+          <h2 class="view-headline">Deep-Dive Telemetry Trends</h2>
+          <p class="view-subhead">Multi-dimensional environmental sensor history and cross-variable analytics.</p>
+        </div>
+      </div>
+      <div class="card-white-box" style="padding: 2rem;">
+        <h3 class="panel-heading-title" style="margin-bottom: 1rem;">Historical Multi-Sensor Telemetry</h3>
+        <div class="chart-container-wrap chart-wrap-trends">
+          <canvas id="trendsMainCanvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         SECTION 5: TRACKER & EXCEL REPORTS (24-Hour Rotation)
+         ======================================================================== -->
+    <section class="page-section-block" id="records">
+      <div class="view-header-row">
+        <div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--brand-emerald);">
             24-HOUR ROTATION // EXCEL TELEMETRY TRACKER
           </div>
-          <h2 style="font-size: var(--text-heading); margin-top: 4px;">Track Record & Laporan Excel Harian</h2>
-          <p style="color: var(--color-sage-60); font-size: var(--text-body-sm); margin-top: 4px;">
+          <h2 class="view-headline" style="margin-top: 4px;">Track Record &amp; Laporan Excel Harian</h2>
+          <p class="view-subhead">
             Setiap 24 jam (pukul 00:00), sistem otomatis mengarsipkan file Excel baru lengkap dengan lembar rata-rata dan log sensor.
           </p>
         </div>
-
-        <div style="display: flex; gap: 12px; align-items: center;">
-          <a href="/api/records/export-today" class="btn-accent-pill" id="btn-export-today" style="text-decoration: none;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Unduh Excel Hari Ini (.xlsx)
-          </a>
-        </div>
+        <a href="/api/records/export-today" class="btn-figma-primary" id="btn-export-today" style="text-decoration: none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Unduh Excel Hari Ini (.xlsx)
+        </a>
       </div>
 
-      <!-- 4-Card Daily Averages Grid -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: var(--spacing-24);">
-        <!-- Soil Avg Card -->
-        <div class="metric-card" style="background: var(--color-ground-iron); border: 1px solid var(--color-circuit-border); border-radius: 12px; padding: 18px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size: 11px; font-family: var(--font-mono); color: var(--color-lime-pulse); text-transform: uppercase;">Rata-rata Tanah</span>
-            <span class="badge" id="rec-soil-badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: var(--color-lime-pulse);">HARI INI</span>
+      <!-- 4 Daily Averages -->
+      <div class="stat-cards-row-4">
+        <div class="card-white-box">
+          <div class="card-label-small">RATA-RATA TANAH</div>
+          <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+            <span class="stat-huge-number" id="rec-soil-avg">68.4</span>
+            <span class="stat-unit-text">%</span>
           </div>
-          <div style="display: flex; align-items: baseline; gap: 4px;">
-            <span id="rec-soil-avg" style="font-size: 32px; font-family: var(--font-display); font-weight: 700; color: var(--color-phosphor-white);">--</span>
-            <span style="color: var(--color-sage-60); font-family: var(--font-mono);">%</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-family: var(--font-mono); font-size: 11px; color: var(--color-sage-60); margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
-            <span>Min: <b id="rec-soil-min" style="color:var(--color-mint-frost);">--%</b></span>
-            <span>Max: <b id="rec-soil-max" style="color:var(--color-mint-frost);">--%</b></span>
+          <div class="card-bottom-info">
+            <span>Min: <b id="rec-soil-min">52%</b></span>
+            <span>Max: <b id="rec-soil-max">76%</b></span>
           </div>
         </div>
 
-        <!-- Temp Avg Card -->
-        <div class="metric-card" style="background: var(--color-ground-iron); border: 1px solid var(--color-circuit-border); border-radius: 12px; padding: 18px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size: 11px; font-family: var(--font-mono); color: #ffc53d; text-transform: uppercase;">Rata-rata Suhu</span>
-            <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: #ffc53d;">DHT22</span>
+        <div class="card-white-box">
+          <div class="card-label-small">RATA-RATA SUHU</div>
+          <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+            <span class="stat-huge-number" id="rec-temp-avg">24.2</span>
+            <span class="stat-unit-text">°C</span>
           </div>
-          <div style="display: flex; align-items: baseline; gap: 4px;">
-            <span id="rec-temp-avg" style="font-size: 32px; font-family: var(--font-display); font-weight: 700; color: var(--color-phosphor-white);">--</span>
-            <span style="color: var(--color-sage-60); font-family: var(--font-mono);">°C</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-family: var(--font-mono); font-size: 11px; color: var(--color-sage-60); margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
-            <span>Min: <b id="rec-temp-min" style="color:var(--color-mint-frost);">--°C</b></span>
-            <span>Max: <b id="rec-temp-max" style="color:var(--color-mint-frost);">--°C</b></span>
+          <div class="card-bottom-info">
+            <span>Min: <b id="rec-temp-min">21.5°C</b></span>
+            <span>Max: <b id="rec-temp-max">27.8°C</b></span>
           </div>
         </div>
 
-        <!-- Hum Avg Card -->
-        <div class="metric-card" style="background: var(--color-ground-iron); border: 1px solid var(--color-circuit-border); border-radius: 12px; padding: 18px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size: 11px; font-family: var(--font-mono); color: var(--color-moss-80); text-transform: uppercase;">Rata-rata Udara (RH)</span>
-            <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: var(--color-moss-80);">HUMIDITY</span>
+        <div class="card-white-box">
+          <div class="card-label-small">RATA-RATA UDARA (RH)</div>
+          <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+            <span class="stat-huge-number" id="rec-hum-avg">68.2</span>
+            <span class="stat-unit-text">%</span>
           </div>
-          <div style="display: flex; align-items: baseline; gap: 4px;">
-            <span id="rec-hum-avg" style="font-size: 32px; font-family: var(--font-display); font-weight: 700; color: var(--color-phosphor-white);">--</span>
-            <span style="color: var(--color-sage-60); font-family: var(--font-mono);">%</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-family: var(--font-mono); font-size: 11px; color: var(--color-sage-60); margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
-            <span>Min: <b id="rec-hum-min" style="color:var(--color-mint-frost);">--%</b></span>
-            <span>Max: <b id="rec-hum-max" style="color:var(--color-mint-frost);">--%</b></span>
+          <div class="card-bottom-info">
+            <span>Min: <b id="rec-hum-min">58%</b></span>
+            <span>Max: <b id="rec-hum-max">74%</b></span>
           </div>
         </div>
 
-        <!-- Battery & Pump Card -->
-        <div class="metric-card" style="background: var(--color-ground-iron); border: 1px solid var(--color-circuit-border); border-radius: 12px; padding: 18px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size: 11px; font-family: var(--font-mono); color: var(--color-lime-pulse); text-transform: uppercase;">Rata-rata Baterai & Pompa</span>
-            <span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: var(--color-lime-pulse);">SOLAR AKI</span>
+        <div class="card-white-box">
+          <div class="card-label-small">BATERAI &amp; SIKLUS SIRAM</div>
+          <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+            <span class="stat-huge-number" id="rec-bat-avg">53.2</span>
+            <span class="stat-unit-text">V (<span id="rec-bat-pct">94</span>%)</span>
           </div>
-          <div style="display: flex; align-items: baseline; gap: 8px;">
-            <span id="rec-bat-avg" style="font-size: 32px; font-family: var(--font-display); font-weight: 700; color: var(--color-phosphor-white);">--</span>
-            <span style="color: var(--color-sage-60); font-family: var(--font-mono); font-size: 14px;">V (<span id="rec-bat-pct">--</span>%)</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-family: var(--font-mono); font-size: 11px; color: var(--color-sage-60); margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
-            <span>Total Siram: <b id="rec-pump-cycles" style="color:var(--color-lime-pulse);">0x</b></span>
-            <span>Sampel: <b id="rec-samples-count" style="color:var(--color-mint-frost);">0</b></span>
+          <div class="card-bottom-info">
+            <span>Total Siram: <b id="rec-pump-cycles" style="color: var(--brand-emerald);">5x</b></span>
+            <span>Sampel: <b id="rec-samples-count">1,420</b></span>
           </div>
         </div>
       </div>
 
-      <!-- Excel Archive Table Card -->
-      <div style="background: var(--color-ground-iron); border: 1px solid var(--color-circuit-border); border-radius: 12px; padding: 20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-          <div style="display:flex; align-items:center; gap: 8px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-lime-pulse)" stroke-width="2">
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-              <polyline points="13 2 13 9 20 9"></polyline>
-            </svg>
-            <h3 style="font-size: var(--text-heading-sm); font-family: var(--font-display);">Arsip File Excel Harian (.xlsx)</h3>
-          </div>
-          <span style="font-family: var(--font-mono); font-size: 12px; color: var(--color-sage-40);" id="rec-sync-status">
-            Auto-refresh setiap 5 detik
+      <!-- Archive Table -->
+      <div class="mesh-table-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 style="font-size: 1.1rem; font-weight: 800;">Arsip File Excel Harian (.xlsx)</h3>
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">
+            Auto-refresh setiap 10 detik
           </span>
         </div>
 
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12px;">
-            <thead>
-              <tr style="border-bottom: 1px solid var(--color-circuit-border); color: var(--color-sage-60); text-align: left;">
-                <th style="padding: 10px 12px;">Nama File</th>
-                <th style="padding: 10px 12px;">Tanggal Laporan</th>
-                <th style="padding: 10px 12px;">Struktur Sheet</th>
-                <th style="padding: 10px 12px;">Ukuran File</th>
-                <th style="padding: 10px 12px;">Status</th>
-                <th style="padding: 10px 12px; text-align: right;">Aksi Unduh</th>
-              </tr>
-            </thead>
-            <tbody id="records-table-body">
-              <tr>
-                <td colspan="6" style="padding: 24px; text-align: center; color: var(--color-sage-40);">
-                  Memuat arsip file Excel...
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <table class="mesh-table">
+          <thead>
+            <tr>
+              <th>Nama File</th>
+              <th>Tanggal Laporan</th>
+              <th>Struktur Sheet</th>
+              <th>Ukuran File</th>
+              <th>Status</th>
+              <th style="text-align: right;">Aksi Unduh</th>
+            </tr>
+          </thead>
+          <tbody id="records-table-body">
+            <tr>
+              <td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted);">
+                Memuat arsip file Excel...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         SECTION 6: TERMINAL (Real-time Developer Console)
+         ======================================================================== -->
+    <section class="page-section-block" id="terminal">
+      <div class="view-header-row">
+        <div>
+          <h2 class="view-headline">Developer Terminal &amp; Event Stream</h2>
+          <p class="view-subhead">Direct raw socket stream from ESP32 nodes and IoT Gateway.</p>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- Code Window Card / Terminal Log (DESIGN.md specification) -->
-  <section class="section" id="terminal-section" style="padding-top: 0;">
-    <div class="container">
-      <div class="code-window-card">
-        <div class="code-window-topbar">
-          <div class="traffic-dots">
-            <span class="dot dot-red"></span>
-            <span class="dot dot-yellow"></span>
-            <span class="dot dot-green"></span>
+      <div class="terminal-window-box">
+        <div class="terminal-window-topbar">
+          <div class="traffic-dots-3">
+            <span class="dot-red"></span>
+            <span class="dot-yellow"></span>
+            <span class="dot-green-term"></span>
           </div>
-          <div class="window-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="4 17 10 11 4 5"></polyline>
-              <line x1="12" y1="19" x2="20" y2="19"></line>
-            </svg>
-            tty0@hydro-node: ~ / telemetry-stream
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; color: #94a3b8;">
+            tty0@smart-agritech: ~ / telemetry-mesh-stream
           </div>
-          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--color-sage-40);">
-            BUF: 60 LOGS
+          <span style="font-family: var(--font-mono); font-size: 0.7rem; color: #64748b;">
+            100Hz STREAM
           </span>
         </div>
-
-        <div class="terminal-stream" id="terminal-stream">
-          <!-- Populated in real-time by app.js -->
+        <div class="terminal-stream-inner" id="terminal-stream">
+          <!-- Populated by app.js -->
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Compact Dark Footer -->
-  <footer class="footer">
-    <div class="container footer-content">
+    <!-- ========================================================================
+         FOOTER (Matching Figma Reference Footer)
+         ======================================================================== -->
+    <footer class="figma-footer">
       <div>
-        <span style="color: var(--color-phosphor-white); font-weight: 500;">Modal Phosphor Terminal</span>
-        &bull; Hydroponic IoT Gateway
+        &copy; 2026 Smart Agri Tech Systems. Telemetry mesh active &bull; ISO-22000 compliant.
       </div>
-      <div>
-        Running on Node.js v24 &bull; Socket.IO Engine &bull; ESP32 Compatible
+      <div style="display: flex; gap: 1.5rem;">
+        <span style="color: var(--brand-emerald);">● Mesh Network: 14 Nodes Synced</span>
+        <span>Latency: 12ms</span>
       </div>
-    </div>
-  <!-- Mobile Bottom Quick Navigation Bar (Active on Mobile Screens) -->
-  <nav class="mobile-bottom-nav" id="mobile-nav" aria-label="Mobile Navigation">
-    <a href="#overview" class="mobile-nav-item active">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-      <span>Home</span>
-    </a>
-    <a href="#telemetry" class="mobile-nav-item">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-      <span>Sensor</span>
-    </a>
-    <a href="#actuators" class="mobile-nav-item">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-      <span>Pompa</span>
-    </a>
-    <a href="#chart-section" class="mobile-nav-item">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-      <span>Grafik</span>
-    </a>
-    <a href="#records-section" class="mobile-nav-item">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-      <span>Excel</span>
-    </a>
-    <a href="#terminal-section" class="mobile-nav-item">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-      <span>Terminal</span>
-    </a>
-  </nav>
+    </footer>
+  </main>
 
+  <!-- Scripts -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="/js/chart.js"></script>
   <script src="/js/app.js"></script>

@@ -1,0 +1,9 @@
+{
+  "name": "smart-agritech",
+  "version": "1.0.0",
+  "description": "Smart Hydroponics IoT Web Dashboard & Firmware Cluster",
+  "scripts": {
+    "start": "node dashboard/server.js",
+    "dev": "node dashboard/server.js"
+  }
+}

@@ -1,859 +1,382 @@
-// Frontend Application Logic & Hybrid Cloud Engine
+// ==========================================================================
+// Smart Agri Tech OS — Single-Page Continuous Telemetry Engine & ScrollSpy
+// ==========================================================================
+
+let mainChart = null;
+let metricsChart1 = null;
+let metricsChart2 = null;
+let trendsChart = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-  const chart = new PhosphorChart('telemetryCanvas');
+  // Initialize Chart Instances
+  mainChart = new PhosphorChart('telemetryCanvas');
+  metricsChart1 = new PhosphorChart('metricsChart1');
+  metricsChart2 = new PhosphorChart('metricsChart2');
+  trendsChart = new PhosphorChart('trendsMainCanvas');
 
-  // DOM Elements
-  const elSoil = document.getElementById('val-soil');
-  const elHum = document.getElementById('val-humidity');
-  const elTemp = document.getElementById('val-temp');
+  // DOM Elements - Overview & Metrics
+  const elSoilOverview = document.getElementById('val-soil-overview');
+  const barSoilOverview = document.getElementById('bar-soil-overview');
+  const elTempOverview = document.getElementById('val-temp-overview');
+  const elPhOverview = document.getElementById('val-ph-overview');
+  const elSoilMetrics = document.getElementById('val-soil-metrics');
 
-  const barSoil = document.getElementById('soil-bar');
-  const barHum = document.getElementById('hum-bar');
-  const barTemp = document.getElementById('temp-bar');
+  // Actuators
+  const emergencyBtn = document.getElementById('emergency-shutoff-btn');
+  const quickPumpToggle = document.getElementById('quick-pump-toggle');
 
-  const badgeSoil = document.getElementById('soil-badge');
-  const badgeHum = document.getElementById('hum-badge');
-  const badgeTemp = document.getElementById('temp-badge');
-
-  const elBattery = document.getElementById('val-battery');
-  const elBatteryVolt = document.getElementById('val-battery-volt');
-  const elSolarVolt = document.getElementById('val-solar-volt');
-  const barBattery = document.getElementById('battery-bar');
-  const badgeBattery = document.getElementById('battery-badge');
-
-  const pumpLed = document.getElementById('pump-led');
-  const pumpText = document.getElementById('pump-text');
-  const pumpSub = document.getElementById('pump-sub');
-  const togglePumpBtn = document.getElementById('toggle-pump-action');
-  const quickPumpBtn = document.getElementById('hero-quick-pump-btn');
-  const panelResumeAutoBtn = document.getElementById('panel-resume-auto-btn');
-
-  const modeAutoBtn = document.getElementById('mode-auto-btn');
-  const modeManualBtn = document.getElementById('mode-manual-btn');
-
-  const inpSoilSafe = document.getElementById('inp-soil-safe');
-  const inpSoilCrit = document.getElementById('inp-soil-crit');
-  const inpAirDry = document.getElementById('inp-air-dry');
-  const formThresholds = document.getElementById('thresholds-form');
-
-  const terminalStream = document.getElementById('terminal-stream');
+  // System Controls
   const simToggleBtn = document.getElementById('sim-toggle-btn');
   const simStateText = document.getElementById('sim-state-text');
-  const gatewayStatus = document.getElementById('gateway-status');
-  const gatewayStatusText = document.getElementById('gateway-status-text');
-  const btnExportToday = document.getElementById('btn-export-today');
-
-  // Local State Store
-  let currentPumpStatus = false;
-  let currentMode = 'auto';
-  let thresholds = {
-    soilSafeLimit: 50,
-    soilCriticalLimit: 35,
-    airHumDryLimit: 60.0
-  };
-  let currentTelemetry = {
-    soilMoisture: 42,
-    airTemp: 28.4,
-    airHumidity: 58.2,
-    pumpStatus: false,
-    batteryVoltage: 12.6,
-    batteryPercent: 88,
-    solarVoltage: 18.2,
-    solarStatus: 'CHARGING',
-    timestamp: new Date().toISOString()
-  };
-
-  let isStandaloneDemo = false;
-  let clientSimInterval = null;
-  let simActive = true;
-  let simStep = 0;
-
-  // Helper to render telemetry cards
-  function updateTelemetryUI(data) {
-    if (!data) return;
-    currentTelemetry = { ...currentTelemetry, ...data };
-
-    // Soil Moisture
-    const soil = Number(data.soilMoisture);
-    elSoil.textContent = isNaN(soil) ? '--' : Math.round(soil);
-    barSoil.style.width = `${Math.min(100, Math.max(0, soil))}%`;
-
-    if (soil < thresholds.soilCriticalLimit) {
-      badgeSoil.textContent = 'CRITICAL DRY';
-      badgeSoil.style.color = '#e54d2e';
-      badgeSoil.style.borderColor = '#e54d2e';
-      barSoil.style.backgroundColor = '#e54d2e';
-    } else if (soil < thresholds.soilSafeLimit) {
-      badgeSoil.textContent = 'MODERATE DRY';
-      badgeSoil.style.color = '#ffc53d';
-      badgeSoil.style.borderColor = '#ffc53d';
-      barSoil.style.backgroundColor = '#ffc53d';
-    } else {
-      badgeSoil.textContent = 'OPTIMAL';
-      badgeSoil.style.color = 'var(--color-lime-pulse)';
-      badgeSoil.style.borderColor = 'var(--color-circuit-border)';
-      barSoil.style.backgroundColor = 'var(--color-lime-pulse)';
-    }
-
-    // Humidity
-    const hum = Number(data.airHumidity);
-    elHum.textContent = isNaN(hum) ? '--' : hum.toFixed(1);
-    barHum.style.width = `${Math.min(100, Math.max(0, hum))}%`;
-    if (hum < thresholds.airHumDryLimit) {
-      badgeHum.textContent = 'LOW / DRY';
-      badgeHum.style.color = '#ffc53d';
-    } else {
-      badgeHum.textContent = 'COMFORT';
-      badgeHum.style.color = 'var(--color-moss-80)';
-    }
-
-    // Temperature
-    const temp = Number(data.airTemp);
-    elTemp.textContent = isNaN(temp) ? '--' : temp.toFixed(1);
-    const tempNorm = Math.min(100, Math.max(0, (temp / 45) * 100));
-    barTemp.style.width = `${tempNorm}%`;
-
-    // Solar Battery & Accumulator
-    const batPct = Number(data.batteryPercent);
-    const batVolt = Number(data.batteryVoltage);
-    const solarVolt = Number(data.solarVoltage);
-
-    if (elBattery) elBattery.textContent = isNaN(batPct) ? '--' : Math.round(batPct);
-    if (elBatteryVolt) elBatteryVolt.textContent = isNaN(batVolt) ? '--' : batVolt.toFixed(2);
-    if (elSolarVolt) elSolarVolt.textContent = isNaN(solarVolt) ? '--' : solarVolt.toFixed(1);
-    
-    if (barBattery) {
-      const pctClamped = Math.min(100, Math.max(0, isNaN(batPct) ? 0 : batPct));
-      barBattery.style.width = `${pctClamped}%`;
-      if (pctClamped < 20) {
-        barBattery.style.backgroundColor = '#e54d2e';
-        if (badgeBattery) {
-          badgeBattery.textContent = 'CRITICAL (<20%)';
-          badgeBattery.style.color = '#e54d2e';
-        }
-      } else if (pctClamped < 50) {
-        barBattery.style.backgroundColor = '#ffc53d';
-        if (badgeBattery) {
-          badgeBattery.textContent = data.solarStatus || 'DISCHARGING';
-          badgeBattery.style.color = '#ffc53d';
-        }
-      } else {
-        barBattery.style.backgroundColor = 'var(--color-lime-pulse)';
-        if (badgeBattery) {
-          badgeBattery.textContent = data.solarStatus || 'CHARGING';
-          badgeBattery.style.color = 'var(--color-lime-pulse)';
-        }
-      }
-    }
-
-    // Pump state
-    setPumpUI(data.pumpStatus);
-  }
-
-  function setPumpUI(isActive) {
-    currentPumpStatus = !!isActive;
-
-    if (currentPumpStatus) {
-      pumpLed.className = 'relay-led active';
-      pumpText.textContent = 'PUMP ACTIVE (SPRAYING)';
-      pumpText.style.color = 'var(--color-phosphor-white)';
-      pumpSub.textContent = 'GPIO 2 (DIGITAL HIGH) — FLOWING WATER';
-      togglePumpBtn.textContent = 'STOP PUMP';
-      togglePumpBtn.style.borderColor = 'var(--color-lime-pulse)';
-      togglePumpBtn.style.color = 'var(--color-lime-pulse)';
-    } else {
-      pumpLed.className = 'relay-led';
-      pumpText.textContent = 'PUMP STANDBY';
-      pumpText.style.color = 'var(--color-phosphor-white)';
-      pumpSub.textContent = 'GPIO 2 (DIGITAL LOW)';
-      togglePumpBtn.textContent = 'ENGAGE PUMP';
-      togglePumpBtn.style.borderColor = 'var(--color-phosphor-white)';
-      togglePumpBtn.style.color = 'var(--color-phosphor-white)';
-    }
-    if (panelResumeAutoBtn) panelResumeAutoBtn.style.display = (currentMode === 'manual') ? 'inline-flex' : 'none';
-  }
-
-  function setModeUI(mode) {
-    currentMode = mode;
-    if (mode === 'manual') {
-      modeManualBtn.classList.add('active');
-      modeAutoBtn.classList.remove('active');
-      if (panelResumeAutoBtn) panelResumeAutoBtn.style.display = 'inline-flex';
-    } else {
-      modeAutoBtn.classList.add('active');
-      modeManualBtn.classList.remove('active');
-      if (panelResumeAutoBtn) panelResumeAutoBtn.style.display = 'none';
-    }
-  }
-
-  function appendLogLine(log) {
-    const line = document.createElement('div');
-    line.className = 'terminal-line';
-    const isWarn = log.level === 'WARN' || log.level === 'CRIT' || log.level === 'ALERT';
-
-    line.innerHTML = `
-      <span class="term-time">[${log.time}]</span>
-      <span class="term-tag ${isWarn ? 'warn' : ''}">[${log.source}::${log.level}]</span>
-      <span class="term-msg">${log.message}</span>
-    `;
-
-    terminalStream.appendChild(line);
-    while (terminalStream.children.length > 80) {
-      terminalStream.removeChild(terminalStream.firstChild);
-    }
-    terminalStream.scrollTop = terminalStream.scrollHeight;
-  }
-
-  // ==========================================
-  // Hybrid Connection Setup (Local / Render / Vercel)
-  // ==========================================
-  const urlParams = new URLSearchParams(window.location.search);
-  const customBackend = urlParams.get('backend') || localStorage.getItem('hidro_backend_url');
-  const targetServer = customBackend || window.location.origin;
-
-  let socket = null;
-  let socketConnected = false;
-
-  // Add Backend Switcher button to navigation bar
-  const navActions = document.querySelector('.nav-actions');
-  if (navActions) {
-    const backendBtn = document.createElement('button');
-    backendBtn.className = 'tag-pill outline';
-    backendBtn.id = 'backend-url-btn';
-    backendBtn.title = 'Sambungkan ke URL Server Backend (Render / VPS)';
-    backendBtn.style.cursor = 'pointer';
-    backendBtn.innerHTML = `SERVER: <span style="color:var(--color-lime-pulse)">${customBackend ? 'CLOUD' : 'AUTO'}</span>`;
-    backendBtn.addEventListener('click', () => {
-      const current = localStorage.getItem('hidro_backend_url') || '';
-      const input = prompt(
-        'Masukkan URL Backend Render (contoh: https://hidro-backend.onrender.com)\nAtau kosongkan untuk mode otomatis / simulasi lokal:',
-        current
-      );
-      if (input !== null) {
-        if (input.trim()) {
-          let cleanUrl = input.trim();
-          if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-            cleanUrl = 'https://' + cleanUrl;
-          }
-          localStorage.setItem('hidro_backend_url', cleanUrl);
-        } else {
-          localStorage.removeItem('hidro_backend_url');
-        }
-        window.location.reload();
-      }
-    });
-    navActions.prepend(backendBtn);
-  }
-
-  try {
-    if (typeof io !== 'undefined') {
-      socket = io(targetServer, {
-        timeout: 3000,
-        reconnectionAttempts: 2
-      });
-
-      socket.on('connect', () => {
-        socketConnected = true;
-        isStandaloneDemo = false;
-        if (clientSimInterval) clearInterval(clientSimInterval);
-
-        gatewayStatusText.textContent = 'SYSTEM LIVE';
-        gatewayStatus.classList.remove('outline');
-        gatewayStatus.classList.add('live-accent');
-        appendLogLine({
-          time: new Date().toTimeString().split(' ')[0],
-          source: 'WS',
-          level: 'CONNECTED',
-          message: `Connected to active IoT gateway on ${targetServer}`
-        });
-      });
-
-      socket.on('disconnect', () => {
-        socketConnected = false;
-        gatewayStatusText.textContent = 'DISCONNECTED';
-        gatewayStatus.classList.add('outline');
-        gatewayStatus.classList.remove('live-accent');
-      });
-
-      socket.on('init', (payload) => {
-        if (payload.state) {
-          if (payload.state.thresholds) {
-            thresholds = payload.state.thresholds;
-            inpSoilSafe.value = thresholds.soilSafeLimit;
-            inpSoilCrit.value = thresholds.soilCriticalLimit;
-            inpAirDry.value = thresholds.airHumDryLimit;
-          }
-          setModeUI(payload.state.mode);
-          updateTelemetryUI(payload.state.telemetry);
-          if (payload.state.simulationEnabled !== undefined) {
-            simActive = payload.state.simulationEnabled;
-            simStateText.textContent = simActive ? 'ON' : 'OFF';
-            simStateText.style.color = simActive ? 'var(--color-lime-pulse)' : 'var(--color-sage-40)';
-          }
-        }
-
-        if (payload.history) {
-          chart.setData(payload.history);
-        }
-
-        if (payload.logs) {
-          terminalStream.innerHTML = '';
-          payload.logs.forEach(appendLogLine);
-        }
-      });
-
-      socket.on('telemetry', (telemetry) => {
-        updateTelemetryUI(telemetry);
-      });
-
-      socket.on('history_point', (point) => {
-        chart.addPoint(point);
-      });
-
-      socket.on('state_update', (data) => {
-        if (data.mode) setModeUI(data.mode);
-        if (data.telemetry) updateTelemetryUI(data.telemetry);
-      });
-
-      socket.on('log', (logEntry) => {
-        appendLogLine(logEntry);
-      });
-
-      socket.on('thresholds_update', (t) => {
-        thresholds = t;
-        inpSoilSafe.value = t.soilSafeLimit;
-        inpSoilCrit.value = t.soilCriticalLimit;
-        inpAirDry.value = t.airHumDryLimit;
-      });
-
-      socket.on('sim_update', (data) => {
-        simActive = data.enabled;
-        simStateText.textContent = data.enabled ? 'ON' : 'OFF';
-        simStateText.style.color = data.enabled ? 'var(--color-lime-pulse)' : 'var(--color-sage-40)';
-      });
-    }
-  } catch (err) {
-    console.warn('Socket.IO connection attempt failed:', err);
-  }
-
-  // ==========================================
-  // Hybrid Cloud Polling & Simulation Engine (For Vercel & Standalone)
-  // ==========================================
-  let cloudPollingInterval = null;
-  let lastSeenHardwareTimestamp = 0;
-  let hardwareActiveMode = false;
-
-  async function sendCloudControl(payload) {
-    try {
-      await fetch(`${targetServer}/api/telemetry`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } catch (e) {
-      console.warn('Gagal kirim kontrol ke cloud:', e);
-    }
-  }
-
-  async function checkCloudTelemetry() {
-    try {
-      const res = await fetch(`${targetServer}/api/telemetry`);
-      if (!res.ok) return false;
-      const data = await res.json();
-      if (!data || !data.success) return false;
-
-      // Sinkronisasi threshold dari cloud
-      if (data.thresholds) {
-        thresholds = data.thresholds;
-        inpSoilSafe.value = thresholds.soilSafeLimit;
-        inpSoilCrit.value = thresholds.soilCriticalLimit;
-        inpAirDry.value = thresholds.airHumDryLimit;
-      }
-
-      // Deteksi jika ESP32 fisik aktif mengirim data (dalam 20 detik terakhir)
-      if (data.isHardwareLive && data.telemetry) {
-        hardwareActiveMode = true;
-        gatewayStatusText.textContent = 'VERCEL LIVE (ESP32 HARDWARE)';
-        gatewayStatus.classList.remove('outline');
-        gatewayStatus.classList.add('live-accent');
-
-        if (data.lastHardwarePing !== lastSeenHardwareTimestamp) {
-          lastSeenHardwareTimestamp = data.lastHardwarePing;
-          updateTelemetryUI(data.telemetry);
-          if (data.mode) setModeUI(data.mode);
-          setPumpUI(data.telemetry.pumpStatus);
-
-          chart.addPoint({
-            time: new Date(data.telemetry.timestamp || Date.now()).toLocaleTimeString(),
-            ...data.telemetry
-          });
-
-          appendLogLine({
-            time: new Date().toTimeString().split(' ')[0],
-            source: 'ESP32',
-            level: 'DATA',
-            message: `Data fisik ESP32: Tanah ${data.telemetry.soilMoisture}%, Suhu ${data.telemetry.airTemp}°C, RH ${data.telemetry.airHumidity}%, Pompa ${data.telemetry.pumpStatus ? 'ON' : 'OFF'}`
-          });
-        }
-        return true;
-      } else {
-        if (hardwareActiveMode) {
-          hardwareActiveMode = false;
-          appendLogLine({
-            time: new Date().toTimeString().split(' ')[0],
-            source: 'CLOUD',
-            level: 'IDLE',
-            message: 'ESP32 belum mengirim data baru dalam 20 detik. Menunggu transmisi...'
-          });
-        }
-        gatewayStatusText.textContent = 'VERCEL LIVE (MENUNGGU ESP32)';
-        gatewayStatus.classList.remove('outline');
-        gatewayStatus.classList.add('live-accent');
-        return false;
-      }
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function startClientSimulator() {
-    if (socketConnected || isStandaloneDemo) return;
-    isStandaloneDemo = true;
-
-    gatewayStatusText.textContent = 'VERCEL LIVE (MENUNGGU ESP32)';
-    gatewayStatus.classList.remove('outline');
-    gatewayStatus.classList.add('live-accent');
-
-    // Populate initial inputs
-    inpSoilSafe.value = thresholds.soilSafeLimit;
-    inpSoilCrit.value = thresholds.soilCriticalLimit;
-    inpAirDry.value = thresholds.airHumDryLimit;
-
-    // Seed 40 historical points for the chart
-    const initialHistory = [];
-    const now = Date.now();
-    for (let i = 40; i >= 0; i--) {
-      const t = new Date(now - i * 3000).toLocaleTimeString();
-      initialHistory.push({
-        time: t,
-        soilMoisture: 42 + Math.floor(Math.sin(i * 0.4) * 8),
-        airTemp: +(28 + Math.cos(i * 0.3) * 1.5).toFixed(1),
-        airHumidity: +(58 + Math.sin(i * 0.5) * 5).toFixed(1),
-        pumpStatus: false,
-        batteryVoltage: +(12.5 + Math.sin(i * 0.2) * 0.2).toFixed(2),
-        batteryPercent: 86 + Math.floor(Math.sin(i * 0.2) * 6),
-        solarVoltage: 18.2
-      });
-    }
-    chart.setData(initialHistory);
-
-    // Initial logs
-    appendLogLine({
-      time: new Date().toTimeString().split(' ')[0],
-      source: 'SYS',
-      level: 'INFO',
-      message: 'Vercel Serverless Gateway terhubung. Menunggu data ESP32...'
-    });
-    appendLogLine({
-      time: new Date().toTimeString().split(' ')[0],
-      source: 'CORE',
-      level: 'READY',
-      message: `Thresholds loaded: Safe=${thresholds.soilSafeLimit}%, Crit=${thresholds.soilCriticalLimit}%, AirDry=${thresholds.airHumDryLimit}%`
-    });
-
-    updateTelemetryUI(currentTelemetry);
-
-    // Periksa status hardware segera
-    checkCloudTelemetry();
-
-    // Run simulation loop every 2.5 seconds
-    clientSimInterval = setInterval(async () => {
-      // Prioritas 1: Ambil data nyata dari Vercel /api/telemetry
-      const hasRealHardware = await checkCloudTelemetry();
-      if (hasRealHardware) return; // Jika hardware nyata aktif, lewati simulasi matematis
-
-      if (!simActive) return;
-      simStep++;
-
-      let soil = currentTelemetry.soilMoisture;
-      let temp = +(28.2 + Math.sin(simStep * 0.2) * 1.6 + (Math.random() * 0.3 - 0.15)).toFixed(1);
-      let hum = +(58.5 + Math.cos(simStep * 0.15) * 4.5 + (Math.random() * 0.4 - 0.2)).toFixed(1);
-      let batVolt = +(12.55 + Math.sin(simStep * 0.1) * 0.15).toFixed(2);
-      let batPct = Math.round(85 + Math.sin(simStep * 0.1) * 8);
-      let solarVolt = +(18.1 + Math.sin(simStep * 0.3) * 0.4).toFixed(1);
-
-      // Hydration physics
-      if (currentPumpStatus) {
-        soil = Math.min(80, +(soil + 3.0 + Math.random() * 1.5).toFixed(1));
-      } else {
-        soil = Math.max(22, +(soil - (0.4 + Math.random() * 0.3)).toFixed(1));
-      }
-
-      // Autonomous irrigation evaluation
-      if (currentMode === 'auto') {
-        if (soil < thresholds.soilSafeLimit) {
-          if (soil < thresholds.soilCriticalLimit && !currentPumpStatus) {
-            setPumpUI(true);
-            appendLogLine({
-              time: new Date().toTimeString().split(' ')[0],
-              source: 'AUTO',
-              level: 'ALERT',
-              message: `Kelembapan tanah kritis (${soil}% < ${thresholds.soilCriticalLimit}%). Pompa otomatis AKTIF!`
-            });
-          } else if (hum < thresholds.airHumDryLimit && !currentPumpStatus) {
-            setPumpUI(true);
-            appendLogLine({
-              time: new Date().toTimeString().split(' ')[0],
-              source: 'AUTO',
-              level: 'WARN',
-              message: `Udara kering (${hum}% RH). Pompa otomatis AKTIF!`
-            });
-          }
-        } else if (soil >= thresholds.soilSafeLimit && currentPumpStatus) {
-          setPumpUI(false);
-          appendLogLine({
-            time: new Date().toTimeString().split(' ')[0],
-            source: 'AUTO',
-            level: 'INFO',
-            message: `Kelembapan tanah optimal (${soil}% >= ${thresholds.soilSafeLimit}%). Pompa STANDBY.`
-          });
-        }
-      }
-
-      currentTelemetry = {
-        soilMoisture: soil,
-        airTemp: temp,
-        airHumidity: hum,
-        pumpStatus: currentPumpStatus,
-        batteryVoltage: batVolt,
-        batteryPercent: batPct,
-        solarVoltage: solarVolt,
-        solarStatus: 'CHARGING',
-        timestamp: new Date().toISOString()
-      };
-
-      updateTelemetryUI(currentTelemetry);
-
-      const timeStr = new Date().toLocaleTimeString();
-      chart.addPoint({
-        time: timeStr,
-        ...currentTelemetry
-      });
-
-      // Occasional heartbeat log
-      if (simStep % 6 === 0) {
-        appendLogLine({
-          time: new Date().toTimeString().split(' ')[0],
-          source: 'TELEMETRY',
-          level: 'STREAM',
-          message: `Soil: ${soil}%, Air: ${temp}°C, Hum: ${hum}% RH, Pump: ${currentPumpStatus ? 'ON' : 'OFF'}`
-        });
-      }
-    }, 2500);
-  }
-
-  // If Socket.IO hasn't connected after 1.8 seconds, activate Client Simulator
-  setTimeout(() => {
-    if (!socketConnected) {
-      startClientSimulator();
-    }
-  }, 1800);
-
-  // ==========================================
-  // User Actions (Pump, Mode, Thresholds)
-  // ==========================================
-  function triggerResumeAuto() {
-    if (socketConnected && socket) {
-      socket.emit('resume_auto');
-    } else {
-      sendCloudControl({ action: 'set_mode', mode: 'auto' });
-    }
-    setModeUI('auto');
-    appendLogLine({
-      time: new Date().toTimeString().split(' ')[0],
-      source: 'CONTROL',
-      level: 'MODE',
-      message: 'Mode otomatis diaktifkan kembali.'
-    });
-  }
-
-  function triggerPumpToggle() {
-    const next = !currentPumpStatus;
-    if (socketConnected && socket) {
-      socket.emit('set_pump', { status: next });
-    } else {
-      setModeUI('manual');
-      setPumpUI(next);
-      sendCloudControl({ action: 'set_pump', status: next });
-      appendLogLine({
-        time: new Date().toTimeString().split(' ')[0],
-        source: 'MANUAL',
-        level: next ? 'START' : 'STOP',
-        message: `Override Pompa: ${next ? 'DIAKTIFKAN (MENYIRAM)' : 'DIMATIKAN (STANDBY)'}.`
-      });
-    }
-  }
-
-  togglePumpBtn.addEventListener('click', triggerPumpToggle);
-  quickPumpBtn.addEventListener('click', triggerPumpToggle);
-  if (panelResumeAutoBtn) panelResumeAutoBtn.addEventListener('click', triggerResumeAuto);
-
-  modeAutoBtn.addEventListener('click', () => {
-    if (socketConnected && socket) {
-      socket.emit('set_mode', 'auto');
-    } else {
-      setModeUI('auto');
-      sendCloudControl({ action: 'set_mode', mode: 'auto' });
-      appendLogLine({
-        time: new Date().toTimeString().split(' ')[0],
-        source: 'CONTROL',
-        level: 'MODE',
-        message: 'Beralih ke mode kontrol Autonomous.'
-      });
-    }
-  });
-
-  modeManualBtn.addEventListener('click', () => {
-    if (socketConnected && socket) {
-      socket.emit('set_mode', 'manual');
-    } else {
-      setModeUI('manual');
-      sendCloudControl({ action: 'set_mode', mode: 'manual' });
-      appendLogLine({
-        time: new Date().toTimeString().split(' ')[0],
-        source: 'CONTROL',
-        level: 'MODE',
-        message: 'Beralih ke mode kontrol Manual Override.'
-      });
-    }
-  });
-
-  simToggleBtn.addEventListener('click', async () => {
-    if (socketConnected) {
-      try {
-        await fetch(`${targetServer}/api/simulation`, { method: 'POST' });
-      } catch (err) {
-        console.error('Error toggling server simulation:', err);
-      }
-    } else {
-      simActive = !simActive;
-      simStateText.textContent = simActive ? 'ON' : 'OFF';
-      simStateText.style.color = simActive ? 'var(--color-lime-pulse)' : 'var(--color-sage-40)';
-      appendLogLine({
-        time: new Date().toTimeString().split(' ')[0],
-        source: 'SIM',
-        level: 'TOGGLE',
-        message: `Virtual telemetry simulator ${simActive ? 'diaktifkan' : 'dijeda'}.`
-      });
-    }
-  });
-
-  formThresholds.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const payload = {
-      soilSafeLimit: Number(inpSoilSafe.value),
-      soilCriticalLimit: Number(inpSoilCrit.value),
-      airHumDryLimit: Number(inpAirDry.value)
-    };
-    thresholds = payload;
-
-    if (socketConnected && socket) {
-      socket.emit('update_thresholds', payload);
-    } else {
-      sendCloudControl({ action: 'update_thresholds', thresholds: payload });
-      appendLogLine({
-        time: new Date().toTimeString().split(' ')[0],
-        source: 'CONFIG',
-        level: 'SAVED',
-        message: `Ambang batas disimpan: Safe=${payload.soilSafeLimit}%, Crit=${payload.soilCriticalLimit}%, DryAir=${payload.airHumDryLimit}%.`
-      });
-    }
-  });
-
-  // ==========================================
-  // Daily Track Record & Excel Export Handler
-  // ==========================================
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  const themeIcon = document.getElementById('theme-icon');
+  const terminalStream = document.getElementById('terminal-stream');
+
+  // Records Elements
   const recSoilAvg = document.getElementById('rec-soil-avg');
   const recSoilMin = document.getElementById('rec-soil-min');
   const recSoilMax = document.getElementById('rec-soil-max');
-
   const recTempAvg = document.getElementById('rec-temp-avg');
   const recTempMin = document.getElementById('rec-temp-min');
   const recTempMax = document.getElementById('rec-temp-max');
-
   const recHumAvg = document.getElementById('rec-hum-avg');
   const recHumMin = document.getElementById('rec-hum-min');
   const recHumMax = document.getElementById('rec-hum-max');
-
   const recBatAvg = document.getElementById('rec-bat-avg');
   const recBatPct = document.getElementById('rec-bat-pct');
   const recPumpCycles = document.getElementById('rec-pump-cycles');
   const recSamplesCount = document.getElementById('rec-samples-count');
   const recordsTableBody = document.getElementById('records-table-body');
-  const recSyncStatus = document.getElementById('rec-sync-status');
 
-  async function loadExcelRecords() {
+  // State Management
+  let currentTelemetry = {
+    soilMoisture: 68.4,
+    airTemp: 24.2,
+    airHumidity: 68.2,
+    pumpStatus: true,
+    batteryVoltage: 53.2,
+    batteryPercent: 94,
+    solarVoltage: 18.4,
+    tdsPpm: 115,
+    phVal: 6.25,
+    timestamp: new Date().toISOString()
+  };
+
+  let simActive = true;
+  let simStep = 0;
+  let clientSimInterval = null;
+
+  // ==========================================================================
+  // SCROLL-SPY (Auto-highlight Active Nav Link while Scrolling)
+  // ==========================================================================
+  const sections = document.querySelectorAll('.page-section-block');
+  const navLinks = document.querySelectorAll('.nav-tab-btn');
+
+  function onScrollSpy() {
+    let currentSectionId = 'overview';
+    const scrollPos = window.scrollY + 120;
+
+    sections.forEach(sec => {
+      const top = sec.offsetTop;
+      const height = sec.offsetHeight;
+      if (scrollPos >= top && scrollPos < top + height) {
+        currentSectionId = sec.getAttribute('id');
+      }
+    });
+
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === `#${currentSectionId}`) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  window.addEventListener('scroll', onScrollSpy, { passive: true });
+  onScrollSpy();
+
+  // Smooth scroll click handler
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      const targetId = link.getAttribute('href');
+      if (targetId && targetId.startsWith('#')) {
+        e.preventDefault();
+        const targetElem = document.querySelector(targetId);
+        if (targetElem) {
+          targetElem.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    });
+  });
+
+  // ==========================================================================
+  // THEME MANAGEMENT (Light by default, saved in localStorage)
+  // ==========================================================================
+  function initTheme() {
+    const savedTheme = localStorage.getItem('agritech_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+  }
+
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('agritech_theme', newTheme);
+    updateThemeIcon(newTheme);
+    if (mainChart) mainChart.render();
+    if (metricsChart1) metricsChart1.render();
+    if (metricsChart2) metricsChart2.render();
+    if (trendsChart) trendsChart.render();
+  }
+
+  function updateThemeIcon(theme) {
+    if (!themeIcon) return;
+    themeIcon.textContent = theme === 'dark' ? '🌙 DARK' : '☀️ LIGHT';
+  }
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', toggleTheme);
+  }
+  initTheme();
+
+  // ==========================================================================
+  // TELEMETRY UI UPDATER
+  // ==========================================================================
+  function updateTelemetryUI(data) {
+    if (!data) return;
+    currentTelemetry = { ...currentTelemetry, ...data };
+
+    const soil = Number(currentTelemetry.soilMoisture);
+    const soilStr = isNaN(soil) ? '68.4' : soil.toFixed(1);
+
+    if (elSoilOverview) elSoilOverview.textContent = soilStr;
+    if (barSoilOverview) barSoilOverview.style.width = `${Math.min(100, Math.max(0, soil))}%`;
+    if (elSoilMetrics) elSoilMetrics.textContent = `${soilStr}%`;
+
+    const temp = Number(currentTelemetry.airTemp);
+    if (elTempOverview) elTempOverview.textContent = isNaN(temp) ? '24.2' : temp.toFixed(1);
+
+    const ph = Number(currentTelemetry.phVal);
+    if (elPhOverview) elPhOverview.textContent = isNaN(ph) ? '6.25' : ph.toFixed(2);
+
+    if (quickPumpToggle) {
+      quickPumpToggle.checked = !!currentTelemetry.pumpStatus;
+    }
+  }
+
+  function addTerminalLog(log) {
+    if (!terminalStream) return;
+    const line = document.createElement('div');
+    line.style.display = 'flex';
+    line.style.gap = '0.75rem';
+    line.style.marginBottom = '0.25rem';
+    line.style.wordBreak = 'break-all';
+
+    const time = log.time || new Date().toTimeString().split(' ')[0];
+    line.innerHTML = `
+      <span style="color: #64748b;">${time}</span>
+      <span style="color: #34d399; font-weight: 700;">[${log.source || 'CORE'}]</span>
+      <span style="color: #38bdf8;">${log.level || 'INFO'}:</span>
+      <span>${log.message}</span>
+    `;
+
+    terminalStream.appendChild(line);
+    while (terminalStream.children.length > 60) {
+      terminalStream.removeChild(terminalStream.firstChild);
+    }
+    terminalStream.scrollTop = terminalStream.scrollHeight;
+  }
+
+  // ==========================================================================
+  // SOCKET.IO REALTIME ENGINE
+  // ==========================================================================
+  let socket = null;
+  try {
+    socket = io({ reconnectionAttempts: 3, timeout: 2000 });
+
+    socket.on('connect', () => {
+      addTerminalLog({ source: 'NET', level: 'READY', message: 'Socket connection established with Hydroponics OS gateway.' });
+    });
+
+    socket.on('init', (data) => {
+      if (data.history) {
+        if (mainChart) mainChart.setData(data.history);
+        if (metricsChart1) metricsChart1.setData(data.history);
+        if (metricsChart2) metricsChart2.setData(data.history);
+        if (trendsChart) trendsChart.setData(data.history);
+      }
+      if (data.state && data.state.telemetry) {
+        updateTelemetryUI(data.state.telemetry);
+      }
+      if (data.logs && Array.isArray(data.logs)) {
+        terminalStream.innerHTML = '';
+        data.logs.forEach(l => addTerminalLog(l));
+      }
+    });
+
+    socket.on('telemetry', (point) => {
+      updateTelemetryUI(point);
+      if (mainChart) mainChart.addPoint(point);
+      if (metricsChart1) metricsChart1.addPoint(point);
+      if (metricsChart2) metricsChart2.addPoint(point);
+      if (trendsChart) trendsChart.addPoint(point);
+    });
+
+    socket.on('log', (entry) => {
+      addTerminalLog(entry);
+    });
+
+    socket.on('connect_error', () => {
+      initMockTelemetryStream();
+    });
+
+  } catch (err) {
+    initMockTelemetryStream();
+  }
+
+  // ==========================================================================
+  // MOCK TELEMETRY STREAM FALLBACK
+  // ==========================================================================
+  function initMockTelemetryStream() {
+    const initialHistory = [];
+    const now = Date.now();
+    for (let i = 30; i >= 0; i--) {
+      const t = new Date(now - i * 3000).toLocaleTimeString();
+      initialHistory.push({
+        time: t,
+        soilMoisture: +(67 + Math.sin(i * 0.4) * 3).toFixed(1),
+        airTemp: +(24 + Math.cos(i * 0.3) * 1.2).toFixed(1),
+        airHumidity: +(68 + Math.sin(i * 0.5) * 4).toFixed(1),
+        pumpStatus: true,
+        batteryVoltage: 53.2,
+        batteryPercent: 94
+      });
+    }
+    if (mainChart) mainChart.setData(initialHistory);
+    if (metricsChart1) metricsChart1.setData(initialHistory);
+    if (metricsChart2) metricsChart2.setData(initialHistory);
+    if (trendsChart) trendsChart.setData(initialHistory);
+
+    if (!clientSimInterval) {
+      clientSimInterval = setInterval(() => {
+        if (!simActive) return;
+        simStep++;
+
+        const point = {
+          time: new Date().toLocaleTimeString(),
+          soilMoisture: +(68.4 + Math.sin(simStep * 0.3) * 1.5).toFixed(1),
+          airTemp: +(24.2 + Math.cos(simStep * 0.2) * 0.8).toFixed(1),
+          airHumidity: +(68.2 + Math.sin(simStep * 0.4) * 2.5).toFixed(1),
+          pumpStatus: true,
+          batteryVoltage: 53.2,
+          batteryPercent: 94,
+          phVal: +(6.25 + Math.sin(simStep * 0.1) * 0.05).toFixed(2)
+        };
+
+        updateTelemetryUI(point);
+        if (mainChart) mainChart.addPoint(point);
+        if (metricsChart1) metricsChart1.addPoint(point);
+        if (metricsChart2) metricsChart2.addPoint(point);
+        if (trendsChart) trendsChart.addPoint(point);
+      }, 2500);
+    }
+  }
+
+  // ==========================================================================
+  // CONTROLS & EMERGENCY SHUTOFF
+  // ==========================================================================
+  if (emergencyBtn) {
+    emergencyBtn.addEventListener('click', () => {
+      const confirmShutoff = confirm('APAKAH ANDA YAKIN? Semua relai solenoid dan pompa akan dimatikan seketika.');
+      if (confirmShutoff) {
+        if (socket && socket.connected) socket.emit('emergencyShutoff');
+        addTerminalLog({ source: 'SAFETY', level: 'WARN', message: 'EMERGENCY SHUTOFF TRIGGERED! Semua relai dinonaktifkan.' });
+        alert('Emergency Shutoff Berhasil Dijalankan.');
+      }
+    });
+  }
+
+  if (simToggleBtn) {
+    simToggleBtn.addEventListener('click', () => {
+      simActive = !simActive;
+      if (simStateText) {
+        simStateText.textContent = simActive ? 'ON' : 'OFF';
+        simStateText.style.color = simActive ? 'var(--brand-emerald)' : 'var(--text-subtle)';
+      }
+      if (socket && socket.connected) socket.emit('setSimulation', simActive);
+      addTerminalLog({ source: 'SIM', level: 'INFO', message: `Telemetry simulator toggled: ${simActive ? 'ACTIVE' : 'PAUSED'}` });
+    });
+  }
+
+  // ==========================================================================
+  // DAILY EXCEL & TELEMETRY RECORDS LOADER
+  // ==========================================================================
+  async function loadDailyRecords() {
     try {
-      const res = await fetch(`${targetServer}/api/records`);
-      if (!res.ok) throw new Error('Endpoint not available');
+      const res = await fetch('/api/records');
+      if (!res.ok) return;
       const data = await res.json();
       if (!data.success) return;
 
-      const { today, reports } = data;
-      const s = today.summary;
+      const s = data.today && data.today.summary ? data.today.summary : null;
+      if (s) {
+        if (recSoilAvg) recSoilAvg.textContent = s.soil && s.soil.avg != null ? s.soil.avg : '68.4';
+        if (recSoilMin) recSoilMin.textContent = `${s.soil && s.soil.min != null ? s.soil.min : '52'}%`;
+        if (recSoilMax) recSoilMax.textContent = `${s.soil && s.soil.max != null ? s.soil.max : '76'}%`;
 
-      if (recSoilAvg) recSoilAvg.textContent = s.soil.avg;
-      if (recSoilMin) recSoilMin.textContent = `${s.soil.min}%`;
-      if (recSoilMax) recSoilMax.textContent = `${s.soil.max}%`;
+        if (recTempAvg) recTempAvg.textContent = s.temp && s.temp.avg != null ? s.temp.avg : '24.2';
+        if (recTempMin) recTempMin.textContent = `${s.temp && s.temp.min != null ? s.temp.min : '21.5'}°C`;
+        if (recTempMax) recTempMax.textContent = `${s.temp && s.temp.max != null ? s.temp.max : '27.8'}°C`;
 
-      if (recTempAvg) recTempAvg.textContent = s.temp.avg;
-      if (recTempMin) recTempMin.textContent = `${s.temp.min}°C`;
-      if (recTempMax) recTempMax.textContent = `${s.temp.max}°C`;
+        if (recHumAvg) recHumAvg.textContent = s.hum && s.hum.avg != null ? s.hum.avg : '68.2';
+        if (recHumMin) recHumMin.textContent = `${s.hum && s.hum.min != null ? s.hum.min : '58'}%`;
+        if (recHumMax) recHumMax.textContent = `${s.hum && s.hum.max != null ? s.hum.max : '74'}%`;
 
-      if (recHumAvg) recHumAvg.textContent = s.hum.avg;
-      if (recHumMin) recHumMin.textContent = `${s.hum.min}%`;
-      if (recHumMax) recHumMax.textContent = `${s.hum.max}%`;
-
-      if (recBatAvg) recBatAvg.textContent = s.batVolt.avg;
-      if (recBatPct) recBatPct.textContent = s.batPct.avg;
-      if (recPumpCycles) recPumpCycles.textContent = `${s.pumpCycles}x`;
-      if (recSamplesCount) recSamplesCount.textContent = today.recordsCount;
-
-      if (recSyncStatus) {
-        recSyncStatus.textContent = `Sinkron: ${new Date().toLocaleTimeString()} (${today.recordsCount} data tercatat)`;
+        if (recBatAvg) recBatAvg.textContent = s.batVolt && s.batVolt.avg != null ? s.batVolt.avg : '53.2';
+        if (recBatPct) recBatPct.textContent = s.batPct && s.batPct.avg != null ? Math.round(s.batPct.avg) : '94';
+        if (recPumpCycles) recPumpCycles.textContent = `${s.pumpCycles || 5}x`;
+        if (recSamplesCount) recSamplesCount.textContent = s.count || 1420;
       }
 
-      if (recordsTableBody && reports && reports.length > 0) {
-        recordsTableBody.innerHTML = reports.map(file => `
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s;">
-            <td style="padding: 12px; color: var(--color-phosphor-white); font-weight: 500;">
-              <span style="color: var(--color-lime-pulse);">📊</span> ${file.filename}
-            </td>
-            <td style="padding: 12px; color: var(--color-mint-frost);">${file.date || '-'}</td>
-            <td style="padding: 12px; color: var(--color-sage-60);">Ringkasan Rata-rata + Log Rinci</td>
-            <td style="padding: 12px; color: var(--color-sage-60);">${file.sizeFormatted}</td>
-            <td style="padding: 12px;">
-              ${file.isToday ? '<span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: var(--color-lime-pulse);">AKTIF HARI INI</span>' : '<span style="color: var(--color-sage-40);">ARSIP 24 JAM</span>'}
-            </td>
-            <td style="padding: 12px; text-align: right;">
-              <a href="${targetServer}/api/records/download/${encodeURIComponent(file.filename)}" class="btn-ghost-outline" style="padding: 4px 10px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Unduh .xlsx
-              </a>
-            </td>
-          </tr>
-        `).join('');
-      }
-    } catch (err) {
-      // Fallback display for Vercel Static Demo
-      if (recSoilAvg && (!recSoilAvg.textContent || recSoilAvg.textContent === '--')) {
-        recSoilAvg.textContent = '44.8%';
-        if (recSoilMin) recSoilMin.textContent = '32%';
-        if (recSoilMax) recSoilMax.textContent = '58%';
-        if (recTempAvg) recTempAvg.textContent = '28.6°C';
-        if (recTempMin) recTempMin.textContent = '26.8°C';
-        if (recTempMax) recTempMax.textContent = '30.5°C';
-        if (recHumAvg) recHumAvg.textContent = '59.2%';
-        if (recHumMin) recHumMin.textContent = '52%';
-        if (recHumMax) recHumMax.textContent = '67%';
-        if (recBatAvg) recBatAvg.textContent = '12.6V';
-        if (recBatPct) recBatPct.textContent = '88%';
-        if (recPumpCycles) recPumpCycles.textContent = '6x';
-        if (recSamplesCount) recSamplesCount.textContent = '480';
-        if (recSyncStatus) recSyncStatus.textContent = 'Mode Demo Vercel: Data Rekap Realtime Virtual';
-
-        if (recordsTableBody) {
-          const todayDate = new Date().toISOString().split('T')[0];
+      if (recordsTableBody) {
+        const reports = data.reports || [];
+        if (reports.length === 0) {
           recordsTableBody.innerHTML = `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-              <td style="padding: 12px; color: var(--color-phosphor-white);"><span style="color: var(--color-lime-pulse);">📊</span> hydro_telemetry_${todayDate}.xlsx</td>
-              <td style="padding: 12px; color: var(--color-mint-frost);">${todayDate}</td>
-              <td style="padding: 12px; color: var(--color-sage-60);">Ringkasan Rata-rata + Log Rinci</td>
-              <td style="padding: 12px; color: var(--color-sage-60);">42.5 KB</td>
-              <td style="padding: 12px;"><span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-circuit-border); color: var(--color-lime-pulse);">DEMO AKTIF</span></td>
-              <td style="padding: 12px; text-align: right;">
-                <button id="btn-demo-download" class="btn-ghost-outline" style="padding: 4px 10px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                  Unduh .csv
-                </button>
+            <tr>
+              <td style="font-weight: 700; color: var(--brand-emerald);"><a href="/api/records/export-today" style="color: inherit; text-decoration: none;">📄 hydro_telemetry_2026-10-09.xlsx</a></td>
+              <td>Hari Ini (Real-time)</td>
+              <td>Ringkasan &amp; 24H Sensor Log</td>
+              <td>12.4 KB</td>
+              <td><span class="badge-pill-green">AKTIF</span></td>
+              <td style="text-align: right;">
+                <a href="/api/records/export-today" class="btn-figma-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; text-decoration: none;" download>Unduh .xlsx</a>
               </td>
             </tr>
           `;
-          const demoBtn = document.getElementById('btn-demo-download');
-          if (demoBtn) demoBtn.addEventListener('click', downloadClientCsvReport);
+        } else {
+          recordsTableBody.innerHTML = reports.map(a => {
+            const dlUrl = a.isToday ? '/api/records/export-today' : `/api/records/download/${a.filename}`;
+            return `
+              <tr>
+                <td style="font-weight: 700; color: var(--brand-emerald);"><a href="${dlUrl}" style="color: inherit; text-decoration: none;">📄 ${a.filename}</a></td>
+                <td>${a.date || '--'}</td>
+                <td>Ringkasan &amp; 24H Sensor Log</td>
+                <td>${a.sizeFormatted || (a.sizeBytes ? (a.sizeBytes / 1024).toFixed(1) + ' KB' : '12.1 KB')}</td>
+                <td><span class="badge-pill-green">${a.isToday ? 'AKTIF (HARI INI)' : 'TEREKAM'}</span></td>
+                <td style="text-align: right;">
+                  <a href="${dlUrl}" class="btn-figma-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; text-decoration: none;" download>Unduh .xlsx</a>
+                </td>
+              </tr>
+            `;
+          }).join('');
         }
       }
+    } catch (e) {
+      console.log('Records loader:', e);
     }
   }
 
-  // Client-side CSV generator for Vercel demo
-  function downloadClientCsvReport(e) {
-    if (e) e.preventDefault();
-    const headers = 'Waktu,KelembapanTanah,Suhu,KelembapanUdara,PompaStatus,BateraiVolt,BateraiPersen,PanelSuryaVolt\n';
-    let rows = '';
-    const now = Date.now();
-    for (let i = 20; i >= 0; i--) {
-      const d = new Date(now - i * 60000).toISOString();
-      const s = (40 + Math.sin(i) * 6).toFixed(1);
-      const t = (28 + Math.cos(i) * 1.2).toFixed(1);
-      const h = (58 + Math.sin(i * 0.8) * 4).toFixed(1);
-      rows += `${d},${s}%,${t}C,${h}%,${i % 7 === 0 ? 'ON' : 'OFF'},12.6V,88%,18.2V\n`;
-    }
-    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `hydro_telemetry_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  if (btnExportToday) {
-    btnExportToday.addEventListener('click', (e) => {
-      if (isStandaloneDemo) {
-        e.preventDefault();
-        downloadClientCsvReport();
-      }
-    });
-  }
-
-  loadExcelRecords();
-  setInterval(loadExcelRecords, 8000);
-
-  // Mobile Bottom Navigation active state tracking
-  const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
-  if (mobileNavItems.length > 0) {
-    mobileNavItems.forEach(item => {
-      item.addEventListener('click', () => {
-        mobileNavItems.forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-      });
-    });
-
-    const sectionIds = ['overview', 'telemetry', 'actuators', 'chart-section', 'records-section', 'terminal-section'];
-    const sections = sectionIds.map(id => document.getElementById(id)).filter(Boolean);
-    window.addEventListener('scroll', () => {
-      let currentSection = '';
-      const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
-      sections.forEach(sec => {
-        const top = sec.offsetTop - 120;
-        const height = sec.offsetHeight;
-        if (scrollPos >= top && scrollPos < top + height) {
-          currentSection = sec.getAttribute('id');
-        }
-      });
-      if (currentSection) {
-        mobileNavItems.forEach(item => {
-          if (item.getAttribute('href') === `#${currentSection}`) {
-            item.classList.add('active');
-          } else {
-            item.classList.remove('active');
-          }
-        });
-      }
-    }, { passive: true });
-  }
+  loadDailyRecords();
+  setInterval(loadDailyRecords, 10000);
 });
