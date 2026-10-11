@@ -1,161 +1,1045 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Agri Tech — HYDROPONICS OS</title>
-  <meta name="description" content="Precision Hydroponics in Phosphor Clarity. Automated multi-zone peristaltic dosing, sensor telemetry, and crop climate modulation.">
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2'><path d='M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z'></path><path d='M12 6v12'></path><path d='M12 12c2.5-3 5-3 5-3'></path></svg>">
+  <title>Smart AgriTech — Sistem Monitoring &amp; Otomasi Hidroponik IoT</title>
+  <meta name="description"
+    content="Sistem monitoring dan otomasi hidroponik presisi dengan sensor ESP32, pelacakan data real-time, kendali relay pompa nutrisi, dan laporan Excel harian.">
+  <link rel="stylesheet" href="/css/style.css?v=20261012e">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z'></path><path d='M12 6v12'></path><path d='M12 12c2.5-3 5-3 5-3'></path><path d='M12 15c-2.5-3-5-3-5-3'></path></svg>">
+  <style id="hero-modal-cube-css">
+    /* ==========================================================================
+       MODAL 3D CUBE SHOWCASE WITH LIVING SPROUT (TUNAS HIDROPONIK IOT)
+       ========================================================================== */
+    .hero-cube-showcase-area {
+      position: relative;
+      width: 100%;
+      max-width: 780px;
+      height: 380px;
+      margin: 0.75rem auto 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      perspective: 1200px;
+    }
+
+    .cube-radial-bloom {
+      position: absolute;
+      width: 540px;
+      height: 540px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(127, 238, 100, 0.42) 0%, rgba(24, 183, 89, 0.22) 32%, rgba(5, 150, 105, 0.06) 58%, transparent 75%);
+      filter: blur(52px);
+      pointer-events: none;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+      animation: bloomHaloPulse 7s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    @keyframes bloomHaloPulse {
+      0% {
+        transform: scale(0.94);
+        opacity: 0.85;
+      }
+
+      50% {
+        transform: scale(1.06);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.98);
+        opacity: 0.9;
+      }
+    }
+
+    .cube-interactive-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.45rem 1.2rem;
+      background: rgba(16, 22, 18, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(127, 238, 100, 0.35);
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #ddffdc;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), 0 0 12px rgba(127, 238, 100, 0.18);
+      margin-bottom: 2.8rem;
+      z-index: 5;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    .cube-interactive-badge.highlight {
+      border-color: #7fee64;
+      background: rgba(22, 38, 25, 0.95);
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 6px 24px rgba(127, 238, 100, 0.35);
+      color: #ffffff;
+    }
+
+    .badge-dot-live {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #7fee64;
+      box-shadow: 0 0 8px #7fee64;
+      animation: pulseDotLive 1.8s infinite;
+    }
+
+    @keyframes pulseDotLive {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.4);
+        opacity: 0.6;
+      }
+    }
+
+    .cube-stage-3d {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px;
+      transform-style: preserve-3d;
+      cursor: pointer;
+      z-index: 2;
+      transition: transform 0.25s ease;
+    }
+
+    .cube-stage-3d:active {
+      cursor: grabbing;
+    }
+
+    .cube-ground-shadow {
+      position: absolute;
+      width: 230px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, rgba(14, 40, 22, 0.45) 45%, transparent 72%);
+      filter: blur(16px);
+      bottom: -10px;
+      transform: rotateX(74deg) translateZ(-40px);
+      pointer-events: none;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      z-index: 1;
+    }
+
+    .cube-rotator {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      transform-style: preserve-3d;
+      transform-origin: center center;
+      transition: transform 0.12s cubic-bezier(0.1, 0.9, 0.2, 1);
+      will-change: transform;
+    }
+
+    .cube-face {
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      left: 0;
+      top: 0;
+      backface-visibility: visible;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .face-grid-matrix {
+      position: absolute;
+      inset: 0;
+      background-size: 18px 18px;
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.10) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.10) 1px, transparent 1px);
+      pointer-events: none;
+    }
+
+    /* TOP FACE */
+    .face-top {
+      transform: rotateX(90deg) translateZ(90px);
+      background: linear-gradient(135deg, #82f067 0%, #34d399 45%, #10b981 100%);
+      border: 1.5px solid rgba(235, 255, 230, 0.85);
+      box-shadow:
+        inset 0 0 28px rgba(255, 255, 255, 0.45),
+        0 0 25px rgba(127, 238, 100, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .face-top-spec {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      font-family: monospace;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: rgba(5, 45, 18, 0.65);
+      pointer-events: none;
+    }
+
+    .hydro-nutrient-core {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .hydro-ring-pulse {
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 0 14px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(127, 238, 100, 0.5);
+      animation: hydroRingPulse 3.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes hydroRingPulse {
+      0% {
+        transform: scale(0.95);
+        opacity: 0.7;
+      }
+
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.95);
+        opacity: 0.7;
+      }
+    }
+
+    .hydro-pod-socket {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #083818 0%, #031c0b 80%, #011206 100%);
+      border: 1.5px solid rgba(127, 238, 100, 0.7);
+      box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(127, 238, 100, 0.3);
+    }
+
+    .cube-surface-ripple {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 16px #7fee64;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0);
+    }
+
+    .cube-surface-ripple.trigger {
+      animation: rippleExpand 0.75s ease-out forwards;
+    }
+
+    @keyframes rippleExpand {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.95;
+      }
+
+      60% {
+        transform: scale(5.5);
+        opacity: 0.5;
+      }
+
+      100% {
+        transform: scale(9);
+        opacity: 0;
+      }
+    }
+
+    /* FRONT-LEFT FACE */
+    .face-front {
+      transform: translateZ(90px);
+      background: linear-gradient(180deg, #18b759 0%, #109948 45%, #076d2f 100%);
+      border: 1.5px solid rgba(127, 238, 100, 0.6);
+      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.35);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .face-wireframe-border {
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      pointer-events: none;
+    }
+
+    .face-tech-accent {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tech-chip {
+      font-family: monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #ddffdc;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(127, 238, 100, 0.4);
+    }
+
+    .tech-led-bar {
+      display: flex;
+      gap: 4px;
+    }
+
+    .led-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .led-dot.active {
+      background: #7fee64;
+      box-shadow: 0 0 6px #7fee64;
+      animation: blinkLed 1.6s infinite alternate;
+    }
+
+    .led-dot.active:nth-child(2) {
+      animation-delay: 0.4s;
+    }
+
+    .led-dot.active:nth-child(3) {
+      animation-delay: 0.8s;
+    }
+
+    @keyframes blinkLed {
+      0% {
+        opacity: 0.4;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    .face-circuit-lines {
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(221, 255, 220, 0.55) 40%, rgba(127, 238, 100, 0.7) 70%, transparent 100%);
+      margin: 10px 0;
+    }
+
+    .face-sub-caption {
+      font-family: monospace;
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #ddffdc;
+      opacity: 0.85;
+    }
+
+    /* FRONT-RIGHT FACE */
+    .face-right {
+      transform: rotateY(90deg) translateZ(90px);
+      background: linear-gradient(180deg, #0e753b 0%, #085529 50%, #043819 100%);
+      border: 1.5px solid rgba(127, 238, 100, 0.4);
+      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.55);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .face-circuit-path {
+      position: absolute;
+      right: 14px;
+      top: 40px;
+      width: 40px;
+      height: 60px;
+      border-right: 1.5px solid rgba(127, 238, 100, 0.35);
+      border-bottom: 1.5px solid rgba(127, 238, 100, 0.35);
+      pointer-events: none;
+    }
+
+    .tech-spec-label {
+      font-family: monospace;
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #aed2a4;
+    }
+
+    .face-left {
+      transform: rotateY(-90deg) translateZ(90px);
+      background: #085529;
+      border: 1px solid rgba(127, 238, 100, 0.25);
+    }
+
+    .face-back {
+      transform: rotateY(180deg) translateZ(90px);
+      background: #043819;
+      border: 1px solid rgba(127, 238, 100, 0.2);
+    }
+
+    .face-bottom {
+      transform: rotateX(-90deg) translateZ(90px);
+      background: #021f0d;
+    }
+
+    /* SPROUT SCULPTURE */
+    .sprout-sculpture {
+      position: absolute;
+      width: 160px;
+      height: 200px;
+      left: 50%;
+      top: 50%;
+      margin-left: -80px;
+      margin-top: -192px;
+      transform-origin: 80px 185px;
+      transform: translateY(-90px) translateZ(0);
+      transform-style: preserve-3d;
+      pointer-events: none;
+      z-index: 10;
+      will-change: transform;
+    }
+
+    .sprout-svg {
+      width: 160px !important;
+      height: 200px !important;
+      max-width: 160px !important;
+      display: block;
+      overflow: visible;
+      filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+    }
+
+    .sprout-root-aura {
+      animation: rootAuraBreath 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes rootAuraBreath {
+      0% {
+        transform: scale(0.92);
+        opacity: 0.6;
+      }
+
+      100% {
+        transform: scale(1.08);
+        opacity: 0.95;
+      }
+    }
+
+    .sprout-leaf.leaf-left {
+      transform-origin: 79px 116px;
+      animation: leafSwayLeft 5.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes leafSwayLeft {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      50% {
+        transform: rotate(-4.5deg);
+      }
+
+      100% {
+        transform: rotate(1deg);
+      }
+    }
+
+    .sprout-leaf.leaf-right {
+      transform-origin: 81px 110px;
+      animation: leafSwayRight 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes leafSwayRight {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      50% {
+        transform: rotate(5deg);
+      }
+
+      100% {
+        transform: rotate(-1.5deg);
+      }
+    }
+
+    .sprout-shoot {
+      transform-origin: 80px 94px;
+      animation: shootNod 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes shootNod {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      50% {
+        transform: rotate(2deg) scale(1.03);
+      }
+
+      100% {
+        transform: rotate(-2deg);
+      }
+    }
+
+    .sprout-dewdrop {
+      animation: dewdropTwinkle 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes dewdropTwinkle {
+
+      0%,
+      100% {
+        transform: translate(136px, 68px) scale(1);
+        filter: drop-shadow(0 0 4px #7fee64);
+      }
+
+      50% {
+        transform: translate(136px, 68px) scale(1.25);
+        filter: drop-shadow(0 0 10px #7fee64);
+      }
+    }
+
+    .cube-rotator.is-pressed {
+      transform: scale3d(1.06, 0.86, 1.06) !important;
+      transition: transform 0.08s ease !important;
+    }
+
+    .sprout-sculpture.bounce-trigger {
+      animation: sproutSpringBounce 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes sproutSpringBounce {
+      0% {
+        transform: translateY(-90px) scale(1, 1);
+      }
+
+      25% {
+        transform: translateY(-90px) scale(1.15, 0.82);
+      }
+
+      50% {
+        transform: translateY(-90px) scale(0.92, 1.28);
+      }
+
+      75% {
+        transform: translateY(-90px) scale(1.05, 0.96);
+      }
+
+      100% {
+        transform: translateY(-90px) scale(1, 1);
+      }
+    }
+
+    .cube-ambient-particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 12;
+    }
+
+    .hero-particle {
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50%;
+      animation: particleFlyUp 1s ease-out forwards;
+    }
+
+    @keyframes particleFlyUp {
+      0% {
+        transform: translate(0, 0) scale(0.6);
+        opacity: 1;
+      }
+
+      70% {
+        opacity: 0.9;
+      }
+
+      100% {
+        transform: translate(var(--tx, 0px), var(--ty, -120px)) scale(1.3);
+        opacity: 0;
+      }
+    }
+
+    .cube-interaction-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+      z-index: 5;
+    }
+
+    .interaction-hint-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 500;
+      color: #8cab87;
+      background: rgba(24, 24, 24, 0.7);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    .interaction-hint-chip svg {
+      color: #7fee64;
+    }
+
+    .cube-counter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #ddffdc;
+      background: rgba(16, 24, 18, 0.85);
+      padding: 0.35rem 0.9rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(127, 238, 100, 0.3);
+      transition: all 0.25s ease;
+    }
+
+    .cube-counter-pill.pulse {
+      border-color: #7fee64;
+      box-shadow: 0 0 14px rgba(127, 238, 100, 0.45);
+      transform: scale(1.08);
+      color: #ffffff;
+    }
+
+    .cube-counter-pill strong {
+      color: #7fee64;
+    }
+
+    @media (max-width: 768px) {
+      .hero-cube-showcase-area {
+        height: 380px;
+        margin: 1rem auto 2rem;
+      }
+
+      .cube-radial-bloom {
+        width: 380px;
+        height: 380px;
+        filter: blur(40px);
+      }
+
+      .cube-rotator {
+        width: 150px;
+        height: 150px;
+      }
+
+      .cube-face {
+        width: 150px;
+        height: 150px;
+      }
+
+      .face-top {
+        transform: rotateX(90deg) translateZ(75px);
+      }
+
+      .face-front {
+        transform: translateZ(75px);
+      }
+
+      .face-right {
+        transform: rotateY(90deg) translateZ(75px);
+      }
+
+      .face-left {
+        transform: rotateY(-90deg) translateZ(75px);
+      }
+
+      .face-back {
+        transform: rotateY(180deg) translateZ(75px);
+      }
+
+      .face-bottom {
+        transform: rotateX(-90deg) translateZ(75px);
+      }
+
+      .sprout-sculpture {
+        width: 140px;
+        height: 175px;
+        margin-left: -70px;
+        margin-top: -168px;
+        transform: translateY(-75px) translateZ(0);
+      }
+
+      .sprout-svg {
+        width: 140px !important;
+        height: 175px !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
   <!-- ==========================================================================
-       TOP NAVBAR (Fixed Header matching Figma Reference)
+       LIQUID GLASS AMBIENT LIGHT ORBS (Background Efek Kaca Cair)
+       ========================================================================== -->
+  <div class="liquid-glass-background" aria-hidden="true">
+    <div class="liquid-orb orb-1"></div>
+    <div class="liquid-orb orb-2"></div>
+    <div class="liquid-orb orb-3"></div>
+    <div class="liquid-orb orb-4"></div>
+  </div>
+
+  <!-- ==========================================================================
+       NAVBAR UTAMA (Header Kaca Frosted Glass)
        ========================================================================== -->
   <header class="figma-navbar">
     <div class="navbar-container">
-      <!-- Brand Logo -->
+      <!-- Logo Brand (Single Line) -->
       <a href="#overview" class="brand-group">
         <div class="brand-leaf-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"></path>
             <path d="M12 6v12"></path>
             <path d="M12 12c2.5-3 5-3 5-3"></path>
             <path d="M12 15c-2.5-3-5-3-5-3"></path>
           </svg>
         </div>
-        <div class="brand-text-stack">
-          <span class="brand-main-title">Smart Agri Tech</span>
-          <span class="brand-sub-badge">HYDROPONICS OS</span>
-        </div>
+        <span class="brand-main-title">Smart AgriTech</span>
       </a>
 
-      <!-- Center Smooth Scroll Nav Links -->
+      <!-- Menu Navigasi Centered (Single Word per Tab) -->
       <nav class="nav-tab-list">
-        <a href="#overview" class="nav-tab-btn active" id="nav-link-overview">Overview</a>
-        <a href="#metrics" class="nav-tab-btn" id="nav-link-metrics">Metrics</a>
-        <a href="#actuators" class="nav-tab-btn" id="nav-link-actuators">Actuators</a>
-        <a href="#trends" class="nav-tab-btn" id="nav-link-trends">Trends</a>
-        <a href="#records" class="nav-tab-btn" id="nav-link-records">Tracker &amp; Excel</a>
-        <a href="#terminal" class="nav-tab-btn" id="nav-link-terminal">Terminal</a>
+        <a href="#metrics" class="nav-tab-btn active" id="nav-link-metrics">Sensor</a>
+        <a href="#trends" class="nav-tab-btn" id="nav-link-trends">Grafik</a>
+        <a href="#records" class="nav-tab-btn" id="nav-link-records">Laporan</a>
+        <a href="#terminal" class="nav-tab-btn" id="nav-link-terminal">Aktivitas</a>
       </nav>
 
-      <!-- Right Nav Status & User Profile -->
+      <!-- Aksi Navigasi Kanan (Compact Single Line) -->
       <div class="nav-actions-right">
-        <div class="pill-status-dot" id="server-status-pill">
+        <div class="pill-status-dot" id="server-status-pill" title="Status Server">
           <span class="dot-indicator dot-green"></span>
-          <span>SERVER: <strong style="color: var(--brand-emerald);">AUTO</strong></span>
+          <span>Server <strong style="color: var(--brand-emerald);">Aktif</strong></span>
         </div>
 
-        <div class="pill-status-dot" id="vercel-status-pill">
+        <div class="pill-status-dot" id="vercel-status-pill" title="Status ESP32">
           <span class="dot-indicator dot-blue"></span>
-          <span>VERCEL LIVE <span style="font-size: 0.65rem; color: var(--text-muted);">(CLIENT SIM)</span></span>
+          <span>ESP32 <strong style="color: var(--brand-emerald);">Live</strong></span>
         </div>
 
-        <button class="toggle-switch-compact" id="sim-toggle-btn" title="Toggle Virtual Simulator">
-          SIMULATOR: <span id="sim-state-text" style="color: var(--brand-emerald);">ON</span>
+        <button class="toggle-switch-compact" id="sim-toggle-btn" title="Beralih Simulator Telemetri">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <line x1="9" y1="1" x2="9" y2="4"></line>
+            <line x1="15" y1="1" x2="15" y2="4"></line>
+            <line x1="9" y1="20" x2="9" y2="23"></line>
+            <line x1="15" y1="20" x2="15" y2="23"></line>
+            <line x1="20" y1="9" x2="23" y2="9"></line>
+            <line x1="20" y1="14" x2="23" y2="14"></line>
+            <line x1="1" y1="9" x2="4" y2="9"></line>
+            <line x1="1" y1="14" x2="4" y2="14"></line>
+          </svg>
+          <span id="sim-state-text" style="color: var(--brand-emerald);">Simulasi</span>
         </button>
 
-        <button class="toggle-switch-compact" id="theme-toggle-btn" title="Toggle Theme (Light / Dark)">
-          <span id="theme-icon">☀️ LIGHT</span>
+        <button class="toggle-switch-compact" id="theme-toggle-btn" title="Ganti Tema (Terang / Gelap)">
+          <span id="theme-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span>Tema</span>
+          </span>
         </button>
-
-        <div class="user-profile-badge">
-          <div class="avatar-circle">EV</div>
-          <div>
-            <div class="user-name-text">Dr. Eleanor Vance</div>
-            <div class="user-role-text">Lead Agronomist</div>
-          </div>
-        </div>
       </div>
     </div>
   </header>
 
   <!-- ==========================================================================
-       MAIN CONTENT VIEWPORT (Continuous 1-Page Layout)
+       VIEWPORT KONTEN UTAMA
        ========================================================================== -->
   <main class="main-viewport">
 
-    <!-- Sub-status Bar -->
-    <div class="sub-status-bar">
-      <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <span style="color: var(--brand-emerald);">●</span>
-        <span>NEXT-GEN PRECISION AGRONOMY &bull; SYSTEM LIVE</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: 1rem;">
-        <span>📶 Socket latency: <strong style="color: var(--brand-emerald);" id="socket-latency">14ms</strong></span>
-        <span>ESP32-S3 Mesh: <strong style="color: var(--text-heading);">16 Nodes Active</strong></span>
-      </div>
-    </div>
 
     <!-- ========================================================================
-         SECTION 1: OVERVIEW (Bio-Dome 3D Centerpiece & Core Telemetry)
+         BAGIAN 1: RINGKASAN & HERO SECTION (Modal.com Style — Tanaman & Energi Hijau)
          ======================================================================== -->
     <section class="page-section-block" id="overview">
-      <div class="view-header-row">
-        <div>
-          <h1 class="view-headline">Precision Hydroponics in Phosphor Clarity</h1>
-          <p class="view-subhead">
-            High-performance developer dashboard powered by Node.js &amp; Socket.IO. Real-time telemetry streaming, automated multi-zone peristaltic dosing, and sub-second crop climate modulation.
-          </p>
+      <div class="hero-modal-container">
+
+        <!-- Headline Display (Modal 64px Style: Lime First Phrase + Phosphor White) -->
+        <h1 class="hero-modal-title">
+          <span class="hero-lime-phrase">SMART AGRITECH.</span> Bertenaga Energi Hijau &amp; IoT Otomatis.
+        </h1>
+
+        <!-- Subhead -->
+        <p class="hero-modal-subhead">
+          Platform otomasi pertanian modern berbasis mikrokontroler ESP32 dan tenaga surya mandiri. Memantau kelembapan
+          media, suhu, dan mengalirkan nutrisi tanaman secara otonom dalam hitungan sub-detik tanpa emisi karbon.
+        </p>
+
+        <!-- CTA Row (Lime Accent Pill + Ghost Outline) -->
+        <div class="hero-modal-cta-row">
+          <a href="#actuators" class="btn-modal-lime-pill">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+              </path>
+            </svg>
+            Buka Kontrol Pompa
+          </a>
+          <a href="/api/records/export-today" class="btn-modal-ghost-outline" download>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Unduh Laporan Hari Ini (.xlsx)
+          </a>
         </div>
-        <div class="header-cta-group">
-          <a href="#metrics" class="btn-figma-primary" style="text-decoration: none;">
-            Inspect Metrics
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </a>
-          <a href="#actuators" class="btn-figma-outline" style="text-decoration: none;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            Quick Override
-          </a>
+        <!-- ====================================================================
+             3D GLOWING MODAL CUBE WITH LIVING SPROUT (TUNAS HIDROPONIK IOT)
+             Style: Modal.com isometric lime-emerald cube + living plant seedling
+             Interactions: 3D cursor tilt + interactive press, bloom & particles
+             ==================================================================== -->
+        <div class="hero-cube-showcase-area" id="hero-cube-area"
+          aria-label="Visual Interaktif Kubus Modal dengan Tunas Hidroponik">
+          <!-- Radial Phosphor Bloom Halo (Modal Brand Green Bloom) -->
+          <div class="cube-radial-bloom" id="cube-radial-bloom"></div>
+
+          <!-- Ambient Floating Cyber Sparks / Hydroponic Dewdrops -->
+          <div class="cube-ambient-particles" id="cube-ambient-particles" aria-hidden="true"></div>
+
+          <!-- 3D Perspective Stage -->
+          <div class="cube-stage-3d" id="cube-stage-3d">
+            <!-- Ground Contact Ambient Shadow -->
+            <div class="cube-ground-shadow" id="cube-ground-shadow"></div>
+
+            <!-- Cube 3D Rotator Node (Preserve-3D) -->
+            <div class="cube-rotator" id="cube-rotator" role="button" tabindex="0"
+              title="Klik untuk mengalirkan nutrisi ke tunas">
+
+              <!-- 6 FACES OF THE CUBE -->
+              <!-- 1. TOP FACE (Wajah Atas Tempat Tunas Tumbuh) -->
+              <div class="cube-face face-top">
+                <div class="face-grid-matrix"></div>
+                <div class="face-top-spec">MODAL // IOT-BLOCK</div>
+                <!-- Hydroponic Net-Pot Socket & Energy Ring -->
+                <div class="hydro-nutrient-core">
+                  <div class="hydro-ring-pulse"></div>
+                  <div class="hydro-pod-socket"></div>
+                </div>
+                <!-- Dynamic Ripple Expanding on Click -->
+                <div class="cube-surface-ripple" id="cube-surface-ripple"></div>
+              </div>
+
+              <!-- 2. FRONT-LEFT FACE (Wajah Depan-Kiri) -->
+              <div class="cube-face face-front">
+                <div class="face-wireframe-border"></div>
+                <div class="face-grid-matrix"></div>
+                <div class="face-tech-accent">
+                  <span class="tech-chip">AGRITECH</span>
+                  <div class="tech-led-bar">
+                    <span class="led-dot active"></span>
+                    <span class="led-dot active"></span>
+                    <span class="led-dot active"></span>
+                  </div>
+                </div>
+                <div class="face-circuit-lines"></div>
+                <div class="face-sub-caption">NODE ESP32 &bull; RTOS</div>
+              </div>
+
+              <!-- 3. FRONT-RIGHT FACE (Wajah Depan-Kanan - Shaded) -->
+              <div class="cube-face face-right">
+                <div class="face-wireframe-border"></div>
+                <div class="face-grid-matrix"></div>
+                <div class="face-circuit-path"></div>
+                <div class="tech-spec-label">100% SOLAR &bull; 0W PLN</div>
+              </div>
+
+              <!-- 4, 5, 6. BACK / LEFT / BOTTOM FACES (Menjaga Soliditas 3D) -->
+              <div class="cube-face face-back"></div>
+              <div class="cube-face face-left"></div>
+              <div class="cube-face face-bottom"></div>
+
+              <!-- SPROUT (TUNAS KECIL TUMBUH TEGAK DI ATAS KUBUS) -->
+              <div class="sprout-sculpture" id="sprout-sculpture" aria-hidden="true">
+                <!-- SVG Tunas Hidroponik (Batang, Daun Kembar, Pucuk Muda & Tetes Nutrisi Bercahaya) -->
+                <svg class="sprout-svg" width="160" height="200" style="width: 160px; height: 200px; display: block;"
+                  viewBox="0 0 160 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <!-- Leaf Gradients (Modal Lime Pulse to Deep Emerald) -->
+                    <linearGradient id="leafGradLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#b8ff9e" />
+                      <stop offset="35%" stop-color="#7fee64" />
+                      <stop offset="100%" stop-color="#149646" />
+                    </linearGradient>
+                    <linearGradient id="leafGradRight" x1="100%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#cbffb8" />
+                      <stop offset="40%" stop-color="#7fee64" />
+                      <stop offset="100%" stop-color="#0e803a" />
+                    </linearGradient>
+                    <linearGradient id="leafGradShoot" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#eaffea" />
+                      <stop offset="50%" stop-color="#7fee64" />
+                      <stop offset="100%" stop-color="#18b759" />
+                    </linearGradient>
+                    <linearGradient id="stemGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                      <stop offset="0%" stop-color="#0a5229" />
+                      <stop offset="45%" stop-color="#16a34a" />
+                      <stop offset="100%" stop-color="#7fee64" />
+                    </linearGradient>
+                    <radialGradient id="dewDropGrad" cx="35%" cy="35%" r="65%">
+                      <stop offset="0%" stop-color="#ffffff" />
+                      <stop offset="45%" stop-color="#ddffdc" />
+                      <stop offset="85%" stop-color="#7fee64" />
+                      <stop offset="100%" stop-color="#059669" />
+                    </radialGradient>
+                    <radialGradient id="sproutBaseGlow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stop-color="#7fee64" stop-opacity="0.85" />
+                      <stop offset="60%" stop-color="#10b981" stop-opacity="0.4" />
+                      <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+                    </radialGradient>
+                    <filter id="sproutSoftGlow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="3.5" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                  </defs>
+
+                  <!-- Base Pod Energy Aura -->
+                  <ellipse cx="80" cy="182" rx="30" ry="11" fill="url(#sproutBaseGlow)" class="sprout-root-aura" />
+
+                  <!-- Sprout Main Stem (Batang Tunas Melengkung Alami) -->
+                  <path class="sprout-stem-back" d="M80 185 C79 155, 77 125, 80 92" stroke="url(#stemGrad)"
+                    stroke-width="7" stroke-linecap="round" />
+                  <path class="sprout-stem-highlight" d="M80.5 185 C79.5 155, 77.8 125, 80.5 94" stroke="#ddffdc"
+                    stroke-width="2.2" stroke-linecap="round" opacity="0.85" />
+
+                  <!-- Left Leaf (Daun Kiri yang Segar) -->
+                  <g class="sprout-leaf leaf-left">
+                    <path d="M79 116 C60 114, 25 106, 20 82 C16 62, 44 65, 62 76 C74 84, 78 102, 79 116 Z"
+                      fill="url(#leafGradLeft)" filter="drop-shadow(0 6px 12px rgba(0,0,0,0.4))" />
+                    <!-- Leaf Vein Highlights -->
+                    <path d="M78 114 C65 103, 45 92, 28 82" stroke="#eaffea" stroke-width="1.8" stroke-linecap="round"
+                      opacity="0.85" />
+                    <path d="M56 100 C50 94, 46 90, 42 86" stroke="#c0ffb4" stroke-width="1.2" stroke-linecap="round"
+                      opacity="0.65" />
+                    <path d="M66 108 C64 103, 62 98, 60 93" stroke="#c0ffb4" stroke-width="1.2" stroke-linecap="round"
+                      opacity="0.65" />
+                  </g>
+
+                  <!-- Right Leaf (Daun Kanan yang Sehat dengan Titik Embun) -->
+                  <g class="sprout-leaf leaf-right">
+                    <path d="M81 110 C100 106, 135 96, 140 72 C144 52, 116 57, 98 70 C86 79, 82 96, 81 110 Z"
+                      fill="url(#leafGradRight)" filter="drop-shadow(0 6px 12px rgba(0,0,0,0.4))" />
+                    <!-- Leaf Vein Highlights -->
+                    <path d="M82 108 C95 96, 115 84, 132 72" stroke="#eaffea" stroke-width="1.8" stroke-linecap="round"
+                      opacity="0.85" />
+                    <path d="M104 93 C110 87, 114 83, 118 79" stroke="#c4ffb8" stroke-width="1.2" stroke-linecap="round"
+                      opacity="0.65" />
+                    <path d="M94 102 C96 97, 98 92, 100 87" stroke="#c4ffb8" stroke-width="1.2" stroke-linecap="round"
+                      opacity="0.65" />
+                  </g>
+
+                  <!-- Center Budding Shoot (Pucuk Daun Muda Mungil di Tengah) -->
+                  <g class="sprout-shoot">
+                    <path d="M80 94 C76 82, 74 70, 80 56 C86 70, 84 82, 80 94 Z" fill="url(#leafGradShoot)"
+                      filter="drop-shadow(0 2px 6px rgba(0,0,0,0.3))" />
+                    <path d="M80 92 L80 60" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" opacity="0.9" />
+                  </g>
+
+                  <!-- Glowing Dewdrop (Tetesan Nutrisi Hidroponik Bercahaya di Ujung Daun) -->
+                  <g class="sprout-dewdrop" transform="translate(136, 68)">
+                    <ellipse cx="0" cy="0" rx="4.5" ry="5.5" fill="url(#dewDropGrad)" filter="url(#sproutSoftGlow)" />
+                    <ellipse cx="-1.5" cy="-2" rx="1.5" ry="1.8" fill="#ffffff" opacity="0.95" />
+                    <circle cx="1.2" cy="1.8" r="0.8" fill="#ffffff" opacity="0.8" />
+                  </g>
+                </svg>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="modal-metrics-proof-strip">
+          <div class="proof-metric-item">
+            <div class="proof-metric-number">0 Watt</div>
+            <div class="proof-metric-label">Emisi Jaringan Listrik PLN</div>
+          </div>
+          <div class="proof-metric-item">
+            <div class="proof-metric-number">100%</div>
+            <div class="proof-metric-label">Daya Mandiri Panel Surya</div>
+          </div>
+          <div class="proof-metric-item">
+            <div class="proof-metric-number">14 ms</div>
+            <div class="proof-metric-label">Latensi Telemetri ESP32</div>
+          </div>
+          <div class="proof-metric-item">
+            <div class="proof-metric-number">&lt; 50 ms</div>
+            <div class="proof-metric-label">Respon Relay Pompa Air</div>
+          </div>
         </div>
       </div>
 
-      <!-- Centerpiece 3D Bio-Dome Showcase Box -->
-      <div class="bio-dome-showcase-box">
-        <div class="bio-dome-image-wrap">
-          <!-- Floating Tags -->
-          <div class="floating-overlay-tag tag-top-left">
-            <span style="color: var(--brand-emerald);">●</span>
-            <span>ZONE 01 &bull; CANOPY MICROCLIMATE &bull; <strong style="color: var(--brand-emerald);">VPD: 1.15 kPa (OPTIMAL)</strong></span>
-          </div>
-
-          <div class="floating-overlay-tag tag-top-right">
-            <span style="color: var(--brand-emerald);">💧</span>
-            <span>NUTRIENT MANIFOLD RATE &bull; <strong style="color: var(--brand-emerald);">4.8 L/min &bull; EC: 2.1 mS/cm</strong></span>
-          </div>
-
-          <!-- 3D Render Image -->
-          <img src="/images/bio_dome_render.png" alt="3D Hydroponic Bio-Dome" class="bio-dome-image-tag">
-
-          <!-- Bottom Floating Bar -->
-          <div class="dome-bottom-floating-bar">
-            <div class="photoperiod-pill">
-              <span>☀️ PHOTOPERIOD: <strong>16H ON / 8H OFF</strong></span>
-              <span>💡 IRRADIANCE: <strong style="color: var(--brand-emerald);">42,500 lx</strong></span>
-            </div>
-
-            <div class="view-mode-pill-tabs">
-              <button class="view-mode-btn active">Sensors</button>
-              <button class="view-mode-btn">Flow Heatmap</button>
-              <button class="view-mode-btn">Canopy 3D</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4 Primary Stat Cards Row -->
+      <!-- 4 Kartu Parameter Utama (Liquid Glass Cards) -->
       <div class="stat-cards-row-4">
-        <!-- 1. Substrate VWC -->
+        <!-- 1. Kelembapan Media Tanam -->
         <div class="card-white-box">
           <div>
             <div class="card-header-flex">
               <div>
-                <div class="card-label-small">SUBSTRATE VWC</div>
-                <div class="card-sublabel-dim">Coir/Perlite Mesh B3</div>
+                <div class="card-label-small">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-emerald);">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                  </svg>
+                  KELEMBAPAN TANAH
+                </div>
+                <div class="card-sublabel-dim">Sensor Kapasitif (GPIO 34)</div>
               </div>
-              <span class="badge-pill-green">↗ +2.4%</span>
+              <span class="badge-pill-green">LEMBAP IDEAL</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
               <span class="stat-huge-number" id="val-soil-overview">68.4</span>
@@ -163,248 +1047,303 @@
             </div>
           </div>
           <div>
-            <div style="height: 4px; width: 100%; background: var(--border-subtle); border-radius: 4px; overflow: hidden;">
-              <div id="bar-soil-overview" style="height: 100%; width: 68.4%; background: var(--brand-emerald); border-radius: 4px;"></div>
+            <div
+              style="height: 6px; width: 100%; background: var(--border-subtle); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 0.5rem;">
+              <div id="bar-soil-overview"
+                style="height: 100%; width: 68.4%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius: var(--radius-pill); transition: width 0.3s ease;">
+              </div>
+            </div>
+            <div class="card-bottom-info">
+              <span>Batas Kritis: &lt; 35%</span>
+              <span style="color: var(--brand-emerald); font-weight: 700;">Target: 50% - 75%</span>
             </div>
           </div>
         </div>
 
-        <!-- 2. Root Zone Temp -->
+        <!-- 2. Suhu Udara Lingkungan -->
         <div class="card-white-box">
           <div>
             <div class="card-header-flex">
               <div>
-                <div class="card-label-small">ROOT ZONE TEMP</div>
-                <div class="card-sublabel-dim">Reservoir #2 Sub-Loop</div>
+                <div class="card-label-small">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-sky);">
+                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                  </svg>
+                  SUHU LINGKUNGAN
+                </div>
+                <div class="card-sublabel-dim">Sensor DHT22 (GPIO 15)</div>
               </div>
-              <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">Setpoint: 22.5°C</span>
+              <span class="badge-pill-green">SEJUK NORMAL</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
-              <span class="stat-huge-number" id="val-temp-overview">22.8</span>
+              <span class="stat-huge-number" id="val-temp-overview">24.2</span>
               <span class="stat-unit-text">°C</span>
             </div>
           </div>
           <div class="card-bottom-info">
-            <span>Min: 21.9°C</span>
-            <span style="color: var(--brand-emerald); font-weight: 700;">Δ +0.3°C nominal</span>
-            <span>Max: 23.1°C</span>
+            <span>Min: 21.5°C</span>
+            <span style="color: var(--brand-emerald); font-weight: 700;">Target: 22°C – 26°C</span>
+            <span>Max: 27.8°C</span>
           </div>
         </div>
 
-        <!-- 3. Solution pH Balance -->
+        <!-- 3. Kelembapan Udara (RH) -->
         <div class="card-white-box">
           <div>
             <div class="card-header-flex">
               <div>
-                <div class="card-label-small">SOLUTION PH BALANCE</div>
-                <div class="card-sublabel-dim">Dual Glass Electrode 04</div>
+                <div class="card-label-small">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-sky);">
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                  </svg>
+                  KELEMBAPAN UDARA
+                </div>
+                <div class="card-sublabel-dim">Kelembapan Relatif (RH)</div>
               </div>
-              <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">Range: 5.8 - 6.5</span>
+              <span class="badge-pill-blue">CUKUP LEMBAP</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
-              <span class="stat-huge-number" id="val-ph-overview">6.25</span>
-              <span class="stat-unit-text">pH</span>
+              <span class="stat-huge-number" id="val-hum-overview">68.2</span>
+              <span class="stat-unit-text">%</span>
             </div>
           </div>
           <div class="card-bottom-info">
-            <span style="color: var(--brand-emerald); font-weight: 700;">● Peristaltic Dosing: Locked &amp; Calibrated</span>
+            <span style="color: var(--brand-sky); font-weight: 700;">Batas Kering: &lt; 60%</span>
+            <span>Kondisi Daun Sehat</span>
           </div>
         </div>
 
-        <!-- 4. Water Recovery -->
+        <!-- 4. Pasokan Baterai & Panel Surya -->
         <div class="card-white-box">
           <div>
             <div class="card-header-flex">
               <div>
-                <div class="card-label-small">WATER RECOVERY</div>
-                <div class="card-sublabel-dim">Closed Loop Drainage</div>
+                <div class="card-label-small">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-amber);">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  DAYA BATERAI &amp; SOLAR
+                </div>
+                <div class="card-sublabel-dim">Tegangan Sensor (GPIO 35)</div>
               </div>
-              <span class="badge-pill-green">98.2% Recycle</span>
+              <span class="badge-pill-green">STABIL 94%</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
-              <span class="stat-huge-number">418.5</span>
-              <span class="stat-unit-text">Liters</span>
+              <span class="stat-huge-number" id="val-bat-overview">12.6</span>
+              <span class="stat-unit-text">V (<span id="val-bat-pct-overview">94</span>%)</span>
             </div>
           </div>
           <div>
-            <div style="height: 4px; width: 100%; background: var(--border-subtle); border-radius: 4px; overflow: hidden;">
-              <div style="height: 100%; width: 98%; background: var(--brand-emerald); border-radius: 4px;"></div>
+            <div
+              style="height: 6px; width: 100%; background: var(--border-subtle); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 0.5rem;">
+              <div id="bar-bat-overview"
+                style="height: 100%; width: 94%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius: var(--radius-pill); transition: width 0.3s ease;">
+              </div>
+            </div>
+            <div class="card-bottom-info">
+              <span style="color: var(--brand-emerald); font-weight: 700;">Pengisian Solar Normal</span>
+              <span>Cutoff: 15%</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Lower Grid: Canopy Spline Chart & Actuator Quick Bus -->
+      <!-- Grid Bawah: Grafik Aliran Telemetri & Kontrol Cepat Pompa -->
       <div class="overview-lower-grid">
-        <!-- Spline Chart -->
+        <!-- Grafik Telemetri Real-Time -->
         <div class="card-white-box">
           <div class="panel-header-line">
             <div>
-              <h3 class="panel-heading-title">Canopy Moisture &amp; VPD Telemetry Flow</h3>
-              <p class="panel-heading-subtitle">Sub-second aggregate across 8 capacitive probes &amp; digital psychrometer cluster</p>
+              <h3 class="panel-heading-title">Aliran Data Telemetri Real-Time</h3>
+              <p class="panel-heading-subtitle">Pemantauan dinamis kelembapan tanah, suhu lingkungan, dan kelembapan
+                udara</p>
             </div>
             <div class="view-mode-pill-tabs">
-              <button class="view-mode-btn active">1h Live</button>
-              <button class="view-mode-btn">6h</button>
-              <button class="view-mode-btn">24h</button>
+              <button class="view-mode-btn active">1 Jam</button>
+              <button class="view-mode-btn">6 Jam</button>
+              <button class="view-mode-btn">24 Jam</button>
             </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem;">
-            <div style="display: flex; gap: 1rem;">
-              <span style="color: var(--brand-emerald);">● VPD (kPa)</span>
-              <span style="color: #0ea5e9;">● RH (%)</span>
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; gap: 1.25rem;">
+              <span style="color: var(--brand-emerald); display: inline-flex; align-items: center; gap: 0.35rem;">
+                <span
+                  style="width: 8px; height: 8px; border-radius: 50%; background: var(--brand-emerald); display: inline-block;"></span>
+                Kelembapan Tanah (%)
+              </span>
+              <span style="color: #0ea5e9; display: inline-flex; align-items: center; gap: 0.35rem;">
+                <span
+                  style="width: 8px; height: 8px; border-radius: 50%; background: #0ea5e9; display: inline-block;"></span>
+                Kelembapan Udara (%)
+              </span>
+              <span style="color: #f59e0b; display: inline-flex; align-items: center; gap: 0.35rem;">
+                <span
+                  style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+                Suhu Lingkungan (°C)
+              </span>
             </div>
-            <span style="color: var(--brand-emerald);">Tuning: Auto-Modulation Active</span>
+            <span style="color: var(--brand-emerald);">Otomasi Cerdas: Berjalan Aktif</span>
           </div>
 
           <div class="chart-container-wrap chart-wrap-overview">
             <canvas id="telemetryCanvas"></canvas>
           </div>
 
-          <div class="bottom-three-metrics-row">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1rem;">
             <div class="tile-metric-box">
-              <div class="tile-metric-label">Air Enthalpy</div>
-              <div class="tile-metric-value">54.2 <span style="font-size: 0.75rem; font-weight: 500;">kJ/kg</span></div>
+              <div class="tile-metric-label">Status Media</div>
+              <div class="tile-metric-value" style="font-size: 1.15rem; color: var(--brand-emerald);">Lembap Ideal</div>
             </div>
             <div class="tile-metric-box">
-              <div class="tile-metric-label">CO2 Enrichment</div>
-              <div class="tile-metric-value">845 <span style="font-size: 0.75rem; font-weight: 500;">ppm</span></div>
+              <div class="tile-metric-label">Status Suhu</div>
+              <div class="tile-metric-value" style="font-size: 1.15rem; color: #0ea5e9;">Sejuk Stabil</div>
             </div>
             <div class="tile-metric-box">
-              <div class="tile-metric-label">Air Speed Canopy</div>
-              <div class="tile-metric-value">0.42 <span style="font-size: 0.75rem; font-weight: 500;">m/s</span></div>
+              <div class="tile-metric-label">Status Pompa</div>
+              <div class="tile-metric-value" style="font-size: 1.15rem; color: var(--text-heading);">Siaga Otomatis
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Actuator Quick Bus -->
+        <!-- Kontrol Cepat Pompa Nutrisi -->
         <div class="card-white-box">
           <div class="panel-header-line">
             <div>
-              <h3 class="panel-heading-title">Actuator Quick Bus</h3>
-              <p class="panel-heading-subtitle">Direct Relay &amp; Triac Overrides</p>
+              <h3 class="panel-heading-title">Kontrol Pompa Air</h3>
+              <p class="panel-heading-subtitle">Kendali Relay Pompa Nutrisi (GPIO 2)</p>
             </div>
-            <span style="color: var(--brand-emerald); font-size: 1.2rem;">●</span>
+            <span class="dot-indicator dot-green"></span>
           </div>
 
           <div class="quick-bus-list">
+            <!-- Pompa Penyiraman -->
             <div class="quick-bus-item">
               <div class="quick-bus-meta">
-                <div class="quick-bus-icon">🔄</div>
+                <div class="quick-bus-icon-wrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                  </svg>
+                </div>
                 <div>
-                  <div class="quick-bus-name">Main Loop Pump</div>
-                  <div class="quick-bus-status">Active (Duty: 85%)</div>
+                  <div class="quick-bus-name">Pompa Penyiraman Nutrisi</div>
+                  <div class="quick-bus-status" id="quick-pump-status-label">Relay Pin 2 &bull; Otomasi Aktif</div>
                 </div>
               </div>
               <label class="ios-switch">
-                <input type="checkbox" id="quick-pump-toggle" checked>
+                <input type="checkbox" id="quick-pump-toggle">
                 <span class="switch-slider"></span>
               </label>
             </div>
 
+            <!-- Mode Sistem -->
             <div class="quick-bus-item">
               <div class="quick-bus-meta">
-                <div class="quick-bus-icon">🧪</div>
+                <div class="quick-bus-icon-wrap"
+                  style="background: var(--color-blue-bg); border-color: rgba(14, 165, 233, 0.3); color: #0ea5e9;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                  </svg>
+                </div>
                 <div>
-                  <div class="quick-bus-name">Nutrient Doser A</div>
-                  <div class="quick-bus-status">Standby &bull; Next in 18m</div>
+                  <div class="quick-bus-name">Mode Otomatis Cerdas</div>
+                  <div class="quick-bus-status">Siram &lt; 35% | Stop &gt;= 50%</div>
                 </div>
               </div>
-              <label class="ios-switch">
-                <input type="checkbox">
-                <span class="switch-slider"></span>
-              </label>
+              <span class="badge-pill-green">AKTIF</span>
             </div>
 
+            <!-- Proteksi Aki -->
             <div class="quick-bus-item">
               <div class="quick-bus-meta">
-                <div class="quick-bus-icon">☁️</div>
+                <div class="quick-bus-icon-wrap"
+                  style="background: var(--color-amber-bg); border-color: rgba(245, 158, 11, 0.3); color: #f59e0b;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                </div>
                 <div>
-                  <div class="quick-bus-name">Mist Nebulizer</div>
-                  <div class="quick-bus-status">Auto-cycling &bull; 15s/300s</div>
+                  <div class="quick-bus-name">Proteksi Baterai / Aki</div>
+                  <div class="quick-bus-status">Kunci Pompa jika &lt; 15%</div>
                 </div>
               </div>
-              <label class="ios-switch">
-                <input type="checkbox" checked>
-                <span class="switch-slider"></span>
-              </label>
-            </div>
-
-            <div class="quick-bus-item">
-              <div class="quick-bus-meta">
-                <div class="quick-bus-icon">💡</div>
-                <div>
-                  <div class="quick-bus-name">UV-C Sterilizer</div>
-                  <div class="quick-bus-status">Online &bull; 254 nm Peak</div>
-                </div>
-              </div>
-              <label class="ios-switch">
-                <input type="checkbox" checked>
-                <span class="switch-slider"></span>
-              </label>
+              <span class="badge-pill-green">AMAN</span>
             </div>
           </div>
 
-          <div class="card-bottom-info" style="margin-top: 1rem;">
-            <span>🛡️ Interlock: ISO Safety Matrix Engaged</span>
-            <a href="#actuators" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">Config</a>
+          <div class="card-bottom-info" style="margin-top: 1.25rem;">
+            <span>Kendali langsung relay ESP32</span>
+            <a href="#actuators"
+              style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">Pengaturan Lengkap
+              &rarr;</a>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ========================================================================
-         SECTION 2: METRICS (Hydroponic Sensor & Telemetry Metrics)
+         BAGIAN 2: PARAMETER SENSOR (Metrics Praktis & Jelas)
          ======================================================================== -->
     <section class="page-section-block" id="metrics">
       <div class="view-header-row">
         <div>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <h2 class="view-headline">Hydroponic Sensor &amp; Telemetry Metrics</h2>
-            <span class="badge-pill-green">● STREAMING 1000ms</span>
+            <h2 class="view-headline">Detail Parameter Sensor Lingkungan</h2>
+            <span class="badge-pill-green">PEMBARUAN REAL-TIME</span>
           </div>
           <p class="view-subhead">
-            Sub-second sensor telemetry streams received over WebSockets / LoRaWAN gateway.
+            Pemantauan presisi kelembapan media tanam serta iklim mikro suhu dan udara untuk memaksimalkan hasil panen
+            hidroponik.
           </p>
         </div>
         <div class="header-cta-group">
-          <select style="padding: 0.55rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background: var(--bg-card); font-weight: 700; color: var(--text-heading);">
-            <option>Zone 01 - Hydroponic Bio-Dome</option>
-            <option>Zone 02 - Nursery Rig</option>
-          </select>
           <div class="view-mode-pill-tabs">
-            <button class="view-mode-btn active">Live Stream (1s)</button>
-            <button class="view-mode-btn">1 Hour</button>
-            <button class="view-mode-btn">24 Hours</button>
-            <button class="view-mode-btn">7 Days</button>
+            <button class="view-mode-btn active">Real-Time (1 dtk)</button>
+            <button class="view-mode-btn">1 Jam</button>
+            <button class="view-mode-btn">24 Jam</button>
           </div>
-          <button class="btn-figma-outline">
-            ⚙️ Calibrate Sensors
-          </button>
         </div>
       </div>
 
-      <!-- Top 2 Chart Cards -->
+      <!-- 2 Kartu Grafik Analisis Utama -->
       <div class="metrics-top-charts-grid">
-        <!-- Substrate Moisture -->
+        <!-- Grafik Kelembapan Tanah -->
         <div class="card-white-box">
           <div class="card-header-flex">
             <div>
-              <div class="card-label-small">FDR MOISTURE ARRAY &bull; SUBSTRATE BED 04</div>
-              <h3 style="font-size: 1.15rem; font-weight: 800; margin-top: 4px;">Substrate Moisture &amp; Volumetric Water Content (% VWC)</h3>
+              <div class="card-label-small">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-emerald);">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                </svg>
+                SENSOR KAPASITIF &bull; GPIO 34
+              </div>
+              <h3 style="font-size: 1.15rem; font-weight: 800; margin-top: 4px;">Kelembapan Media Tanam (% VWC)</h3>
             </div>
-            <span class="badge-pill-green">((•)) Stable Mesh</span>
+            <span class="badge-pill-green">Sinyal Stabil</span>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0;">
             <div class="tile-metric-box">
-              <div class="tile-metric-label">Capacitive FDR Probe 01</div>
-              <div class="tile-metric-value"><span id="val-soil-metrics">68.4%</span> <span style="font-size: 0.7rem; font-weight: 600; color: var(--brand-emerald);">↗ Optimal VWC</span></div>
+              <div class="tile-metric-label">Kelembapan Saat Ini</div>
+              <div class="tile-metric-value"><span id="val-soil-metrics">68.4%</span> <span
+                  style="font-size: 0.7rem; font-weight: 600; color: var(--brand-emerald);">Optimal</span></div>
             </div>
             <div class="tile-metric-box">
-              <div class="tile-metric-label">Capacitive FDR Probe 02</div>
-              <div class="tile-metric-value">66.8% <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Target: 65 - 72%</span></div>
+              <div class="tile-metric-label">Rentang Rekomendasi</div>
+              <div class="tile-metric-value">60 – 75% <span
+                  style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Aman</span></div>
             </div>
           </div>
 
@@ -413,27 +1352,36 @@
           </div>
         </div>
 
-        <!-- Micro-Climate Dual Probes -->
+        <!-- Grafik Suhu & Lingkungan -->
         <div class="card-white-box">
           <div class="card-header-flex">
             <div>
-              <div class="card-label-small">DUAL-SENSOR THERMAL PROBE MESH</div>
-              <h3 style="font-size: 1.15rem; font-weight: 800; margin-top: 4px;">Micro-Climate: Air Temp vs Root Reservoir Temp (°C)</h3>
+              <div class="card-label-small">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-sky);">
+                  <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                </svg>
+                SENSOR DHT22 &bull; GPIO 15
+              </div>
+              <h3 style="font-size: 1.15rem; font-weight: 800; margin-top: 4px;">Suhu Udara &amp; Suhu Lingkungan (°C)
+              </h3>
             </div>
             <div style="display: flex; gap: 0.75rem; font-size: 0.75rem; font-weight: 700;">
-              <span style="color: #0ea5e9;">● Air (24.2°C)</span>
-              <span style="color: var(--brand-emerald);">● Reservoir (21.5°C)</span>
+              <span style="color: #0ea5e9;">● Udara (24.2°C)</span>
+              <span style="color: var(--brand-emerald);">● Media (21.5°C)</span>
             </div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0;">
             <div class="tile-metric-box">
-              <div class="tile-metric-label">Ambient Canopy Air</div>
-              <div class="tile-metric-value">24.2°C <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Target: 24.0°C (±1.5)</span></div>
+              <div class="tile-metric-label">Suhu Udara Kanopi</div>
+              <div class="tile-metric-value">24.2°C <span
+                  style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Target: 24.0°C</span></div>
             </div>
             <div class="tile-metric-box">
-              <div class="tile-metric-label">Nutrient Reservoir Root Bed</div>
-              <div class="tile-metric-value">21.5°C <span style="font-size: 0.7rem; font-weight: 600; color: var(--brand-emerald);">Chiller Idle (Nominal)</span></div>
+              <div class="tile-metric-label">Suhu Media Perakaran</div>
+              <div class="tile-metric-value">21.5°C <span
+                  style="font-size: 0.7rem; font-weight: 600; color: var(--brand-emerald);">Sejuk Ideal</span></div>
             </div>
           </div>
 
@@ -443,14 +1391,14 @@
         </div>
       </div>
 
-      <!-- Middle 3 Analytical Cards -->
+      <!-- 3 Kartu Kondisi Praktis (Sederhana & Mudah Dipahami) -->
       <div class="metrics-three-cards-row">
-        <!-- 1. pH & EC -->
+        <!-- 1. Status Kelembapan Tanah -->
         <div class="card-white-box">
           <div class="card-header-flex">
             <div>
-              <div class="card-label-small">DOSING &amp; IONIC BALANCE</div>
-              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">pH &amp; Electrical Conductivity (EC)</h4>
+              <div class="card-label-small">STATUS NUTRISI MEDIA</div>
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">Kondisi Kelembapan Tanah</h4>
             </div>
             <span class="badge-pill-green">OPTIMAL</span>
           </div>
@@ -459,570 +1407,344 @@
             <div class="circular-gauge-svg-wrap">
               <svg viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="var(--bg-subtle)" stroke-width="8"></circle>
-                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--brand-emerald)" stroke-width="8" stroke-dasharray="264" stroke-dashoffset="66" stroke-linecap="round"></circle>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--brand-emerald)" stroke-width="8"
+                  stroke-dasharray="264" stroke-dashoffset="75" stroke-linecap="round"></circle>
               </svg>
               <div class="gauge-center-label">
-                <span class="gauge-center-number">6.35</span>
-                <span class="gauge-center-sub">pH SAFE</span>
+                <span class="gauge-center-number">68%</span>
+                <span class="gauge-center-sub">LEMBAP</span>
               </div>
             </div>
-            <div style="flex: 1; font-size: 0.75rem; line-height: 1.6;">
-              <div style="display: flex; justify-content: space-between;"><span>pH Safe Window:</span> <strong>5.8 – 6.5</strong></div>
-              <div style="display: flex; justify-content: space-between;"><span>Acid Buffer Res.:</span> <strong>92% Cap</strong></div>
-              <div style="display: flex; justify-content: space-between;"><span>Electrode Drift:</span> <strong>±0.02 pH</strong></div>
+            <div style="flex: 1; font-size: 0.78rem; line-height: 1.6;">
+              <div style="display: flex; justify-content: space-between;"><span>Rentang Aman:</span> <strong>50% –
+                  75%</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span>Titik Siram:</span> <strong>&lt;
+                  35%</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span>Titik Berhenti:</span> <strong>&gt;=
+                  50%</strong></div>
             </div>
           </div>
 
           <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px;">
-              <span>Electrical Conductivity</span>
-              <span style="color: var(--brand-emerald); font-size: 0.95rem;">2.18 <span style="font-size: 0.75rem;">mS/cm</span></span>
-            </div>
-            <div style="height: 6px; width: 100%; background: var(--bg-subtle); border-radius: 4px; overflow: hidden;">
-              <div style="height: 100%; width: 72%; background: var(--brand-emerald);"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-subtle); margin-top: 4px;">
-              <span>0.5 Weak</span>
-              <span style="color: var(--brand-emerald); font-weight: 700;">Mineral Saturation Ideal</span>
-              <span>3.0 High</span>
-            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">
+              Media tanam berada dalam kadar air yang cukup. Akar tanaman dapat menyerap larutan nutrisi secara leluasa
+              tanpa resiko kebusukan.
+            </p>
           </div>
         </div>
 
-        <!-- 2. NPK Macro-Nutrient Profile -->
+        <!-- 2. Status Iklim Mikro Udara -->
         <div class="card-white-box">
           <div class="card-header-flex">
             <div>
-              <div class="card-label-small">SPECTROMETRIC PROBES</div>
-              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">NPK Macro-Nutrient Profile</h4>
+              <div class="card-label-small">IKLIM MIKRO KANOPI</div>
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">Kondisi Udara &amp; Daun</h4>
             </div>
-            <span class="badge-pill-green">REALTIME</span>
+            <span class="badge-pill-blue">SEGAR</span>
           </div>
-          <p style="font-size: 0.7rem; color: var(--text-subtle);">Optical absorption telemetry &bull; Ionic ppm</p>
 
-          <div class="npk-progress-stack">
-            <div class="npk-row-item">
-              <div class="npk-row-meta">
-                <span style="color: var(--brand-emerald);">● Nitrogen (N)</span>
-                <span><strong>185 ppm</strong> / 180 Target (102%)</span>
-              </div>
-              <div class="npk-bar-track">
-                <div class="npk-bar-fill" style="width: 100%; background: var(--brand-emerald);"></div>
-              </div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin: 0.85rem 0;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.85rem; background: var(--bg-nested); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+              <span style="font-size: 0.8rem; font-weight: 700;">Kelembapan Udara (RH)</span>
+              <span style="font-weight: 800; color: #0ea5e9;">68.2% <span
+                  style="font-size: 0.65rem; color: var(--text-muted);">(Cukup)</span></span>
             </div>
-
-            <div class="npk-row-item">
-              <div class="npk-row-meta">
-                <span style="color: #0ea5e9;">● Phosphorus (P)</span>
-                <span><strong>48 ppm</strong> / 50 Target (96%)</span>
-              </div>
-              <div class="npk-bar-track">
-                <div class="npk-bar-fill" style="width: 96%; background: #0ea5e9;"></div>
-              </div>
-            </div>
-
-            <div class="npk-row-item">
-              <div class="npk-row-meta">
-                <span style="color: #1e3a8a;">● Potassium (K)</span>
-                <span><strong>225 ppm</strong> / 220 Target (102%)</span>
-              </div>
-              <div class="npk-bar-track">
-                <div class="npk-bar-fill" style="width: 100%; background: #1e3a8a;"></div>
-              </div>
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.85rem; background: var(--bg-nested); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+              <span style="font-size: 0.8rem; font-weight: 700;">Suhu Rata-rata Udara</span>
+              <span style="font-weight: 800; color: var(--brand-emerald);">24.2°C <span
+                  style="font-size: 0.65rem; color: var(--text-muted);">(Sejuk)</span></span>
             </div>
           </div>
 
-          <div style="background: var(--bg-nested); padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); font-size: 0.75rem; font-weight: 700; color: var(--brand-emerald); text-align: center;">
-            ⚖️ Ca/Mg Ionic Ratio: 3:1 Balanced
+          <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+            <p style="font-size: 0.75rem; color: var(--text-muted);">
+              Kondisi udara di sekitar kanopi daun ideal untuk proses transpirasi dan fotosintesis tanaman tanpa stres
+              kekeringan.
+            </p>
           </div>
         </div>
 
-        <!-- 3. VPD & Transpiration -->
+        <!-- 3. Status Baterai & Daya Surya -->
         <div class="card-white-box">
           <div class="card-header-flex">
             <div>
-              <div class="card-label-small">ATMOSPHERIC TRANSPIRATION</div>
-              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">Vapor Pressure Deficit (VPD)</h4>
+              <div class="card-label-small">EFISIENSI ENERGI</div>
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin-top: 2px;">Baterai &amp; Panel Surya</h4>
             </div>
-            <span class="badge-pill-green">LEAF SAFE</span>
+            <span class="badge-pill-green">MANDIRI</span>
           </div>
 
-          <div style="text-align: center; margin: 0.75rem 0;">
-            <div style="font-size: 0.7rem; color: var(--text-subtle); text-transform: uppercase;">CURRENT TRANSPIRATION FORCE</div>
-            <div style="font-family: var(--font-title); font-size: 2.25rem; font-weight: 800; color: var(--text-heading); line-height: 1;">1.15 <span style="font-size: 0.9rem; font-weight: 600;">kPa</span></div>
-            <span class="badge-pill-green" style="margin-top: 4px;">● Healthy Vegetative Zone (0.8 – 1.2 kPa)</span>
-          </div>
-
-          <div class="vpd-spectrum-container">
-            <div class="vpd-spectrum-bar">
-              <div class="vpd-spectrum-thumb" style="left: 55%;"></div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin: 0.85rem 0;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.85rem; background: var(--bg-nested); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+              <span style="font-size: 0.8rem; font-weight: 700;">Tegangan Aki / Baterai</span>
+              <span style="font-weight: 800; color: var(--brand-emerald);">12.6 V <span
+                  style="font-size: 0.65rem;">(94%)</span></span>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-subtle); margin-top: 6px;">
-              <span>0.4 Under</span>
-              <span style="font-weight: 700; color: var(--brand-emerald);">Target: 1.10</span>
-              <span>1.8 Stress</span>
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.85rem; background: var(--bg-nested); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+              <span style="font-size: 0.8rem; font-weight: 700;">Input Panel Surya</span>
+              <span style="font-weight: 800; color: #f59e0b;">18.4 V <span
+                  style="font-size: 0.65rem;">(Mengisi)</span></span>
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
-            <div class="tile-metric-box">
-              <div class="tile-metric-label">Relative Humidity</div>
-              <div class="tile-metric-value" style="font-size: 0.95rem;">68.2% <span style="font-size: 0.65rem; color: var(--text-muted);">RH</span></div>
-            </div>
-            <div class="tile-metric-box">
-              <div class="tile-metric-label">Calculated Dew Point</div>
-              <div class="tile-metric-value" style="font-size: 0.95rem;">17.8°C</div>
-            </div>
+          <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+            <p style="font-size: 0.75rem; color: var(--text-muted);">
+              Pasokan kelistrikan mandiri bekerja tanpa gangguan PLN. Baterai terisi penuh dan siap menyuplai kebutuhan
+              pompa.
+            </p>
           </div>
-        </div>
-      </div>
-
-      <!-- Bottom Mesh Health Table -->
-      <div class="mesh-table-wrapper">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1.1rem; font-weight: 800;">Sensor Health &amp; Gateway Node Mesh</h3>
-              <span class="badge-pill-green">14 Synced Probes</span>
-            </div>
-            <p style="font-size: 0.75rem; color: var(--text-muted);">Per-sensor battery voltage, LoRa signal telemetry, calibration drift and heartbeat ping.</p>
-          </div>
-          <div style="display: flex; gap: 0.75rem;">
-            <input type="text" placeholder="Filter probe by Node ID..." style="padding: 0.45rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background: var(--bg-card); font-size: 0.75rem;">
-            <button class="btn-figma-outline" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">Export CSV</button>
-          </div>
-        </div>
-
-        <table class="mesh-table">
-          <thead>
-            <tr>
-              <th>NODE IDENTIFIER</th>
-              <th>SENSOR ARRAY TYPE</th>
-              <th>PROBE DEPTH / PLACEMENT</th>
-              <th>BATTERY / SOLAR FLOAT</th>
-              <th>LORA SIGNAL (RSSI)</th>
-              <th>HEARTBEAT</th>
-              <th>CALIBRATION STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>● NODE-BIO-09A</strong></td>
-              <td>Volumetric Water &amp; Salinity<br><span style="color: var(--text-subtle); font-size: 0.7rem;">FDR Teros 12 Array</span></td>
-              <td>15 cm &bull; Rockwool Slab 4</td>
-              <td>⚡ <strong>3.65V</strong> <span style="font-size: 0.7rem; color: var(--brand-emerald);">(Solar 100%)</span></td>
-              <td>📶 <strong>-64 dBm</strong> <span style="color: var(--brand-emerald);">[Excellent]</span></td>
-              <td>480ms ago</td>
-              <td><span class="badge-pill-green">NORMAL / CALIBRATED</span></td>
-            </tr>
-            <tr>
-              <td><strong>● NODE-BIO-09B</strong></td>
-              <td>In-line Potentiometric pH Probe<br><span style="color: var(--text-subtle); font-size: 0.7rem;">Glass Bulb Double Junction</span></td>
-              <td>Manifold 01 Return Line</td>
-              <td>⚡ <strong>3.62V</strong> <span style="font-size: 0.7rem; color: var(--text-muted);">(Float)</span></td>
-              <td>📶 <strong>-68 dBm</strong> <span style="color: var(--brand-emerald);">[Strong]</span></td>
-              <td>920ms ago</td>
-              <td><span class="badge-pill-green">NORMAL / CALIBRATED</span></td>
-            </tr>
-            <tr>
-              <td><strong>● NODE-BIO-14C</strong></td>
-              <td>Toroidal Conductivity (EC)<br><span style="color: var(--text-subtle); font-size: 0.7rem;">Inductive Mineral Sensor</span></td>
-              <td>Main Reservoir Tank C</td>
-              <td>⚡ <strong>3.58V</strong> <span style="font-size: 0.7rem; color: var(--text-muted);">(Grid Synced)</span></td>
-              <td>📶 <strong>-59 dBm</strong> <span style="color: var(--brand-emerald);">[Excellent]</span></td>
-              <td>340ms ago</td>
-              <td><span class="badge-pill-green">NORMAL / CALIBRATED</span></td>
-            </tr>
-            <tr>
-              <td><strong>● NODE-BIO-22E</strong></td>
-              <td>Spectroscopic NPK In-line Probe<br><span style="color: var(--text-subtle); font-size: 0.7rem;">Near-Infrared Optical Array</span></td>
-              <td>Fertigation Injection Line</td>
-              <td>⚡ <strong>3.64V</strong> <span style="font-size: 0.7rem; color: var(--brand-emerald);">(Solar 100%)</span></td>
-              <td>📶 <strong>-78 dBm</strong> <span style="color: #0ea5e9;">[Good]</span></td>
-              <td>1,200ms ago</td>
-              <td><span style="font-size: 0.7rem; font-weight: 700; color: #475569; background: var(--bg-subtle); padding: 0.2rem 0.5rem; border-radius: 4px;">CALIBRATION IN 4d</span></td>
-            </tr>
-            <tr>
-              <td><strong>● NODE-ENV-01T</strong></td>
-              <td>Aspirated Psychrometer / Temp<br><span style="color: var(--text-subtle); font-size: 0.7rem;">Platinum RTD PT1000 + Capacitive</span></td>
-              <td>Canopy Mid-Level (1.8m)</td>
-              <td>⚡ <strong>3.61V</strong> <span style="font-size: 0.7rem; color: var(--brand-emerald);">(Solar 98%)</span></td>
-              <td>📶 <strong>-61 dBm</strong> <span style="color: var(--brand-emerald);">[Excellent]</span></td>
-              <td>210ms ago</td>
-              <td><span class="badge-pill-green">NORMAL / CALIBRATED</span></td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
-          <span>Packet Delivery Ratio: <strong>99.98%</strong> &bull; Gateway Up-Time: <strong>42d 18h</strong></span>
-          <span style="color: var(--brand-emerald); font-weight: 700;">● Zero Telemetry Dropouts Detected</span>
         </div>
       </div>
     </section>
 
     <!-- ========================================================================
-         SECTION 3: ACTUATORS (Automated Actuator & Hardware Controller Matrix)
+         BAGIAN 3: KONTROL POMPA (Actuators & Otomasi Irigasi)
          ======================================================================== -->
     <section class="page-section-block" id="actuators">
       <div class="view-header-row">
         <div>
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--brand-emerald); letter-spacing: 0.05em;">
-            HYDROPONIC HARDWARE MATRIX v4.2 &bull; BUS ACTIVE: CAN-OPEN 500kbps
+            KENDALI PERANGKAT &bull; RELAY PIN GPIO 2 TERKONEKSI
           </div>
-          <h2 class="view-headline" style="margin-top: 4px;">Automated Actuator &amp; Hardware Controller Matrix</h2>
+          <h2 class="view-headline" style="margin-top: 4px;">Kontrol Pompa &amp; Otomasi Irigasi</h2>
           <p class="view-subhead">
-            Direct solenoid valve sequencing, variable frequency drive pump modulation, and autonomous microclimate actuators.
+            Kendali langsung relay pompa penyiraman nutrisi serta pengaturan proteksi otomatis tanaman hidroponik.
           </p>
         </div>
         <div class="header-cta-group">
-          <div class="badge-pill-green" style="padding: 0.45rem 0.85rem; font-size: 0.75rem;">
-            🛡️ SAFETY INTERLOCK: SECURED &bull; ALL 8 RESPONDING
+          <div class="badge-pill-green">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            PROTEKSI OTOMATIS AKTIF
           </div>
-          <button class="btn-figma-outline">
-            🔄 Sync Hardware State
-          </button>
           <button class="btn-figma-danger" id="emergency-shutoff-btn">
-            🛑 EMERGENCY SHUTOFF
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            PENGHENTIAN DARURAT
           </button>
         </div>
       </div>
 
-      <!-- 4 Summary Stat Boxes -->
-      <div class="actuators-summary-row">
+      <!-- 4 Ringkasan Singkat -->
+      <div class="stat-cards-row-4">
         <div class="card-white-box" style="padding: 1rem 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div class="card-label-small">VALVE STATUS</div>
-              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-heading);">2 Open <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">/ 2 Closed</span></div>
+              <div class="card-label-small">STATUS POMPA</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-heading);">Relay Pin 2</div>
             </div>
-            <div style="font-size: 1.5rem; color: var(--brand-emerald);">🚰</div>
+            <div style="color: var(--brand-emerald);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+              </svg>
+            </div>
           </div>
         </div>
 
         <div class="card-white-box" style="padding: 1rem 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div class="card-label-small">AGGREGATE VFD LOAD</div>
-              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-heading);">248 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Watts</span></div>
+              <div class="card-label-small">MODE SISTEM</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #0ea5e9;">Otomatis Cerdas</div>
             </div>
-            <div style="font-size: 1.5rem; color: #0ea5e9;">⚡</div>
+            <div style="color: #0ea5e9;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+              </svg>
+            </div>
           </div>
         </div>
 
         <div class="card-white-box" style="padding: 1rem 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div class="card-label-small">DISPATCH LATENCY</div>
-              <div style="font-size: 1.5rem; font-weight: 800; color: var(--brand-emerald);">8.4 <span style="font-size: 0.85rem; font-weight: 600;">ms</span></div>
+              <div class="card-label-small">BATAS SIRAM KRITIS</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #f59e0b;">&lt; 35% <span
+                  style="font-size: 0.85rem; font-weight: 600;">Tanah</span></div>
             </div>
-            <div style="font-size: 1.5rem; color: var(--brand-emerald);">📉</div>
+            <div style="color: #f59e0b;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                </path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
           </div>
         </div>
 
         <div class="card-white-box" style="padding: 1rem 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div class="card-label-small">AUTONOMOUS RUNTIME</div>
-              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-heading);">418 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">hrs clean</span></div>
+              <div class="card-label-small">BATAS AMAN BERHENTI</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: var(--brand-emerald);">&gt;= 50% <span
+                  style="font-size: 0.85rem; font-weight: 600;">Tanah</span></div>
             </div>
-            <div style="font-size: 1.5rem; color: var(--text-muted);">⚙️</div>
+            <div style="color: var(--brand-emerald);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 4 Actuator Matrix Grid Panels -->
-      <div class="actuators-matrix-grid-4">
-        <!-- 1. Irrigation & Drip Solenoids -->
+      <!-- 2 Kartu Kontrol Utama -->
+      <div class="actuator-hero-control">
+        <!-- Kartu 1: Kendali Relay Pompa Air -->
         <div class="card-white-box">
-          <div class="card-header-flex">
+          <div class="panel-header-line">
             <div>
-              <h3 style="font-size: 1.1rem; font-weight: 800;">Irrigation &amp; Drip Solenoids</h3>
-              <p style="font-size: 0.75rem; color: var(--text-muted);">High-cycle 24V DC zero-bleed pilot valves</p>
+              <h3 class="panel-heading-title">Panel Kendali Relay Pompa Air</h3>
+              <p class="panel-heading-subtitle">Saklar manual dan status langsung relay mikrokontroler ESP32</p>
             </div>
-            <span class="badge-pill-green">4 OF 4 COMMUNICATING</span>
+            <span class="badge-pill-green">PIN GPIO 2</span>
           </div>
 
-          <div style="margin: 1rem 0;">
-            <div class="solenoid-row-item">
-              <div>
-                <div style="font-size: 0.8125rem; font-weight: 700;">● Zone 1 &bull; Bio-Dome Overhead Mist</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">Cycle: <strong>15s ON / 45s OFF</strong> &bull; Flow: <strong style="color: var(--brand-emerald);">3.8 L/min</strong></div>
-              </div>
-              <button class="btn-state-on">ON</button>
+          <div class="pump-visual-card">
+            <div class="pump-pulse-ring" id="pump-visual-ring">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+              </svg>
             </div>
 
-            <div class="solenoid-row-item">
-              <div>
-                <div style="font-size: 0.8125rem; font-weight: 700;">● Zone 2 &bull; Deep Water Culture (DWC) Main Feed</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">Flow: <strong style="color: var(--brand-emerald);">12.4 L/min</strong> &bull; Pressure: <strong>2.8 Bar</strong></div>
-              </div>
-              <button class="btn-state-on">ON</button>
+            <div style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem;" id="pump-state-text">
+              STANDBY (MATI)
             </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); max-width: 320px; margin-bottom: 1.25rem;">
+              Pompa air otomatis menyala saat tanah kering dan otomatis mati saat kelembapan optimal tercapai.
+            </p>
 
-            <div class="solenoid-row-item">
-              <div>
-                <div style="font-size: 0.8125rem; font-weight: 700;">● Zone 3 &bull; Seedling Nursery Micro-Drip</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">Next scheduled run: <strong>14:00 (In 42 mins)</strong> &bull; Preset: 250 mL</div>
-              </div>
-              <button class="btn-state-off">OFF</button>
-            </div>
-
-            <div class="solenoid-row-item">
-              <div>
-                <div style="font-size: 0.8125rem; font-weight: 700;">🔒 Zone 4 &bull; Flush &amp; Drain Bypass</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">Interlocked &bull; Emergency discharge only</div>
-              </div>
-              <button class="btn-state-locked">LOCKED</button>
+            <div
+              style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.25rem; background: var(--bg-card); border-radius: var(--radius-pill); border: 1px solid var(--border-card); box-shadow: var(--shadow-sm);">
+              <span style="font-size: 0.85rem; font-weight: 700;">Kendali Manual:</span>
+              <label class="ios-switch">
+                <input type="checkbox" id="main-pump-toggle">
+                <span class="switch-slider"></span>
+              </label>
             </div>
           </div>
 
-          <div class="card-bottom-info">
-            <span>Pressure relief valve: 3.4 Bar threshold</span>
-            <a href="#" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">SOLENOID CONFIG</a>
+          <div class="card-bottom-info" style="margin-top: 1.25rem;">
+            <span>Respon modul relay: <strong>&lt; 50ms</strong></span>
+            <span style="color: var(--brand-emerald); font-weight: 700;">Relay 5V Terproteksi Optocoupler</span>
           </div>
         </div>
 
-        <!-- 2. Variable Speed Pumps (VFD) -->
+        <!-- Kartu 2: Logika & Proteksi Otomasi -->
         <div class="card-white-box">
-          <div class="card-header-flex">
+          <div class="panel-header-line">
             <div>
-              <h3 style="font-size: 1.1rem; font-weight: 800;">Variable Speed Pumps (VFD)</h3>
-              <p style="font-size: 0.75rem; color: var(--text-muted);">Modulated frequency drives &amp; peristaltic precision dosing</p>
+              <h3 class="panel-heading-title">Logika &amp; Proteksi Otomasi Tanaman</h3>
+              <p class="panel-heading-subtitle">Aturan cerdas untuk mencegah kekurangan air maupun busuk akar</p>
             </div>
-            <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-heading); background: var(--bg-subtle); padding: 0.2rem 0.6rem; border-radius: 4px;">TOTAL DRAW: 212W</span>
+            <span class="badge-pill-green">SISTEM CERDAS</span>
           </div>
 
-          <div style="margin: 1rem 0;">
-            <div style="padding: 0.75rem 1rem; background: var(--bg-nested); border-radius: var(--radius-md); border: 1px solid var(--border-card); margin-bottom: 0.75rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700;">
-                <div>Primary Recirculation Pump <span class="badge-pill-green" style="font-size: 0.65rem;">CLOSED-LOOP</span></div>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">1,750 RPM | 185W | 42°C</span>
-              </div>
-              <div class="vfd-slider-row">
-                <button class="vfd-btn-step">-</button>
-                <input type="range" class="vfd-slider-input" min="0" max="100" value="78">
-                <button class="vfd-btn-step">+</button>
-                <strong style="font-size: 0.85rem; width: 35px; text-align: right;">78%</strong>
-              </div>
-            </div>
-
-            <div style="padding: 0.75rem 1rem; background: var(--bg-nested); border-radius: var(--radius-md); border: 1px solid var(--border-card); margin-bottom: 0.75rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700;">
-                <div>Peristaltic Dosing Pump A (Macro-N) <span style="font-size: 0.65rem; padding: 2px 6px; background: #e0f2fe; color: #0284c7; border-radius: 4px;">CALIBRATED</span></div>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">42 RPM | 18 mL/min</span>
-              </div>
-              <div class="vfd-slider-row">
-                <button class="vfd-btn-step">-</button>
-                <input type="range" class="vfd-slider-input" min="0" max="100" value="35">
-                <button class="vfd-btn-step">+</button>
-                <strong style="font-size: 0.85rem; width: 35px; text-align: right;">35%</strong>
-              </div>
-            </div>
-
-            <div style="padding: 0.75rem 1rem; background: var(--bg-nested); border-radius: var(--radius-md); border: 1px solid var(--border-card);">
-              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700;">
-                <div>pH Down Dosing Pump B (Phosphoric 10%) <span class="badge-pill-green" style="font-size: 0.65rem;">MICRO-PULSE</span></div>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">14 RPM | 4.2 mL/min</span>
-              </div>
-              <div class="vfd-slider-row">
-                <button class="vfd-btn-step">-</button>
-                <input type="range" class="vfd-slider-input" min="0" max="100" value="12">
-                <button class="vfd-btn-step">+</button>
-                <strong style="font-size: 0.85rem; width: 35px; text-align: right;">12%</strong>
-              </div>
-            </div>
-          </div>
-
-          <div class="card-bottom-info">
-            <span>Anti-cavitation sensor feedback: <strong>Normal</strong></span>
-            <a href="#" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">FLOW TELEMETRY</a>
-          </div>
-        </div>
-
-        <!-- 3. Climate & Environment Actuators -->
-        <div class="card-white-box">
-          <div class="card-header-flex">
-            <div>
-              <h3 style="font-size: 1.1rem; font-weight: 800;">Climate &amp; Environment Actuators</h3>
-              <p style="font-size: 0.75rem; color: var(--text-muted);">Atmospheric control, louvres, extraction, and PAR lighting</p>
-            </div>
-            <span style="font-size: 0.7rem; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 0.2rem 0.6rem; border-radius: 4px;">VPD OPTIMIZED</span>
-          </div>
-
-          <div style="margin: 1rem 0;">
-            <div style="margin-bottom: 0.85rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 700;">
-                <span>Bio-Dome Retractable Roof Louvre</span>
-                <span style="color: var(--brand-emerald);">45% Deployed</span>
-              </div>
-              <div class="segmented-percent-group">
-                <button class="segmented-percent-btn">0% (Shut)</button>
-                <button class="segmented-percent-btn">25%</button>
-                <button class="segmented-percent-btn active">45%</button>
-                <button class="segmented-percent-btn">75%</button>
-                <button class="segmented-percent-btn">100%</button>
-              </div>
-            </div>
-
-            <div class="solenoid-row-item">
+          <div class="rules-checklist">
+            <div class="rule-check-item">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round" class="rule-check-icon">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
               <div>
-                <div style="font-size: 0.8125rem; font-weight: 700;">Dual Exhaust Extraction Fans</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">Speed: <strong>60% (PWM)</strong> &bull; Output: <strong>850 CFM</strong></div>
+                <strong>Penyiraman Otomatis Kritis:</strong>
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">
+                  Jika kelembapan tanah turun di bawah <strong>35%</strong>, relay pompa seketika aktif mengalirkan
+                  nutrisi.
+                </div>
               </div>
-              <span class="badge-pill-green">● RUNNING</span>
             </div>
 
-            <div class="solenoid-row-item">
+            <div class="rule-check-item">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round" class="rule-check-icon">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
               <div>
-                <div style="font-size: 0.8125rem; font-weight: 700;">High-Pressure Ultrasonic Fogger</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">Threshold trigger &bull; RH &lt; 60%</div>
+                <strong>Pencegahan Akar Busuk (Over-Watering):</strong>
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">
+                  Jika kelembapan tanah mencapai <strong>&gt;= 50%</strong>, pompa wajib berhenti seketika agar
+                  respirasi akar tetap sehat.
+                </div>
               </div>
-              <span class="badge-pill-green">AUTO</span>
             </div>
 
-            <div class="solenoid-row-item">
-              <div style="flex: 1;">
-                <div style="font-size: 0.8125rem; font-weight: 700;">Full-Spectrum LED Grow Array</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">85% Dimmer &bull; 660nm Peak</div>
-              </div>
-              <input type="range" class="vfd-slider-input" min="0" max="100" value="85" style="max-width: 140px;">
-            </div>
-          </div>
-
-          <div class="card-bottom-info">
-            <span>Internal Air Velocity: <strong>0.38 m/s</strong></span>
-            <a href="#" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">CLIMATE LOGS</a>
-          </div>
-        </div>
-
-        <!-- 4. Solar Cluster & Battery Storage -->
-        <div class="card-white-box">
-          <div class="card-header-flex">
-            <div>
-              <h3 style="font-size: 1.1rem; font-weight: 800;">Solar Cluster &amp; Battery Storage</h3>
-              <p style="font-size: 0.75rem; color: var(--text-muted);">Off-grid direct microgrid power budget</p>
-            </div>
-            <span class="badge-pill-green">100% AUTONOMOUS</span>
-          </div>
-
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 0.75rem 0;">
-            <div class="tile-metric-box">
-              <div class="tile-metric-label">PHOTOVOLTAIC GEN</div>
-              <div style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 800; color: var(--brand-emerald);">+1.84 <span style="font-size: 0.7rem; font-weight: 600;">kW Active</span></div>
-            </div>
-            <div class="tile-metric-box">
-              <div class="tile-metric-label">ACTUATOR DEMAND</div>
-              <div style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 800; color: var(--text-heading);">0.62 <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">kW Load</span></div>
-            </div>
-            <div class="tile-metric-box">
-              <div class="tile-metric-label">NET BATTERY SURPLUS</div>
-              <div style="font-family: var(--font-title); font-size: 1.25rem; font-weight: 800; color: var(--brand-emerald);">+1.22 <span style="font-size: 0.7rem; font-weight: 600;">kW Charging</span></div>
-            </div>
-          </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-nested); border-radius: var(--radius-md); border: 1px solid var(--border-card); margin-bottom: 0.5rem;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <div style="width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--brand-emerald); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
-                94%
-              </div>
+            <div class="rule-check-item">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round" class="rule-check-icon">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
               <div>
-                <div style="font-size: 0.8125rem; font-weight: 700;">LiFePO4 48V Matrix</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">SOC: <strong>94.5%</strong> &bull; Reserve: <strong style="color: var(--brand-emerald);">26.8 hrs</strong> &bull; Delta: &plusmn;0.003V</div>
+                <strong>Kompensasi Udara Kering:</strong>
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">
+                  Jika kelembapan udara &lt; 60% dan tanah di bawah 50%, sistem siap menyiram lebih awal untuk menjaga
+                  kelembapan mikro.
+                </div>
               </div>
             </div>
-            <div style="font-family: var(--font-title); font-size: 1.1rem; font-weight: 800;">53.2 V <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">Peak Voltage</div></div>
-          </div>
 
-          <div class="card-bottom-info">
-            <span>Inverter Efficiency: <strong>96.8%</strong> &bull; Grid: <strong>DISCONNECTED</strong></span>
-            <a href="#" style="color: var(--brand-emerald); font-weight: 700; text-decoration: none;">INVERTER METRICS</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hardware Telemetry & Actuation Audit Log -->
-      <div class="mesh-table-wrapper">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 style="font-size: 1.1rem; font-weight: 800;">Hardware Telemetry &amp; Actuation Audit Log</h3>
-              <span class="badge-pill-green">● STREAMING 100Hz</span>
+            <div class="rule-check-item">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round" class="rule-check-icon">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <div>
+                <strong>Proteksi Tegangan Baterai:</strong>
+                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">
+                  Jika daya aki/baterai kritis (&lt; 15%), pompa dinonaktifkan sementara untuk menjaga keawetan baterai.
+                </div>
+              </div>
             </div>
-            <p style="font-size: 0.75rem; color: var(--text-muted);">Immutable ring-buffer of solenoid closures, PWM transitions, and safety checks.</p>
           </div>
-          <button class="btn-figma-outline" style="font-size: 0.75rem; padding: 0.45rem 0.85rem;">EXPORT CSV</button>
-        </div>
 
-        <table class="mesh-table">
-          <thead>
-            <tr>
-              <th>TIMESTAMP (UTC)</th>
-              <th>SUBSYSTEM NODE</th>
-              <th>ACTION DISPATCHED</th>
-              <th>TRIGGER GENESIS</th>
-              <th>CONFIRMATION TELEMETRY</th>
-              <th>STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>13:42:19.04</code></td>
-              <td><strong>Valve #2 (DWC Main Feed)</strong></td>
-              <td>Solenoid OPEN (24V latch)</td>
-              <td>Autonomous: Volumetric Water Content &lt; 65%</td>
-              <td>Flow verified: <strong>12.4 L/min</strong></td>
-              <td><span class="badge-pill-green">SUCCESS</span></td>
-            </tr>
-            <tr>
-              <td><code>13:30:00.12</code></td>
-              <td><strong>LED Light Array (Bay 4)</strong></td>
-              <td>Spectrum shifted to FLOWERING</td>
-              <td>Circadian Schedule: Target DLI 28.4 mol/m²/d</td>
-              <td>660nm Deep Red @ 85% Dimmer</td>
-              <td><span class="badge-pill-green">SUCCESS</span></td>
-            </tr>
-            <tr>
-              <td><code>13:15:02.89</code></td>
-              <td><strong>VFD Recirc Pump 1</strong></td>
-              <td>Modulation target adjusted (72% &rarr; 78%)</td>
-              <td>Closed-loop Dissolved Oxygen Compensation</td>
-              <td>1,750 RPM stable (42°C head)</td>
-              <td><span class="badge-pill-green">SUCCESS</span></td>
-            </tr>
-            <tr>
-              <td><code>12:59:45.31</code></td>
-              <td><strong>Peristaltic Pump B</strong></td>
-              <td>Dosed 14 mL Phosphoric 10%</td>
-              <td>pH Sensor Alert: Solution drifted to 6.58 pH</td>
-              <td>Target reached: <strong>5.92 pH</strong></td>
-              <td><span class="badge-pill-green">SUCCESS</span></td>
-            </tr>
-            <tr>
-              <td><code>12:45:00.00</code></td>
-              <td><strong>Extraction Fans PWM</strong></td>
-              <td>Stepped to 60% Duty Cycle</td>
-              <td>Autonomous: Vapor Pressure Deficit (VPD) regulation</td>
-              <td>Airflow nominal: <strong>850 CFM</strong></td>
-              <td><span class="badge-pill-green">SUCCESS</span></td>
-            </tr>
-          </tbody>
-        </table>
+          <div class="card-bottom-info" style="margin-top: 1.25rem;">
+            <span>Evaluasi logika: <strong>Setiap 1 detik</strong></span>
+            <span style="color: var(--brand-emerald); font-weight: 700;">Semua Proteksi Aman</span>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- ========================================================================
-         SECTION 4: TRENDS & DEEP DIVE ANALYTICS
+         BAGIAN 4: GRAFIK TREN HISTORIS
          ======================================================================== -->
     <section class="page-section-block" id="trends">
       <div class="view-header-row">
         <div>
-          <h2 class="view-headline">Deep-Dive Telemetry Trends</h2>
-          <p class="view-subhead">Multi-dimensional environmental sensor history and cross-variable analytics.</p>
+          <h2 class="view-headline">Grafik Tren Riwayat Sensor</h2>
+          <p class="view-subhead">Visualisasi pergerakan data kelembapan tanah, suhu lingkungan, dan kelembapan udara
+            dari waktu ke waktu.</p>
         </div>
       </div>
-      <div class="card-white-box" style="padding: 2rem;">
-        <h3 class="panel-heading-title" style="margin-bottom: 1rem;">Historical Multi-Sensor Telemetry</h3>
+      <div class="card-white-box" style="padding: 1.75rem;">
+        <div class="panel-header-line" style="margin-bottom: 1rem;">
+          <h3 class="panel-heading-title">Grafik Pergerakan Sensor Multi-Parameter</h3>
+          <div style="display: flex; gap: 1rem; font-size: 0.75rem; font-weight: 700;">
+            <span style="color: var(--brand-emerald);">● Kelembapan Tanah (%)</span>
+            <span style="color: #0ea5e9;">● Kelembapan Udara (%)</span>
+            <span style="color: #f59e0b;">● Suhu Udara (°C)</span>
+          </div>
+        </div>
         <div class="chart-container-wrap chart-wrap-trends">
           <canvas id="trendsMainCanvas"></canvas>
         </div>
@@ -1030,21 +1752,24 @@
     </section>
 
     <!-- ========================================================================
-         SECTION 5: TRACKER & EXCEL REPORTS (24-Hour Rotation)
+         BAGIAN 5: LAPORAN & RIWAYAT EXCEL HARIAN (24 Jam)
          ======================================================================== -->
     <section class="page-section-block" id="records">
       <div class="view-header-row">
         <div>
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--brand-emerald);">
-            24-HOUR ROTATION // EXCEL TELEMETRY TRACKER
+            ROTASI 24 JAM // ARSIP LAPORAN SENSOR
           </div>
-          <h2 class="view-headline" style="margin-top: 4px;">Track Record &amp; Laporan Excel Harian</h2>
+          <h2 class="view-headline" style="margin-top: 4px;">Laporan &amp; Riwayat Excel Harian</h2>
           <p class="view-subhead">
-            Setiap 24 jam (pukul 00:00), sistem otomatis mengarsipkan file Excel baru lengkap dengan lembar rata-rata dan log sensor.
+            Setiap 24 jam (pukul 00:00), sistem otomatis merekam seluruh pembacaan sensor dan mengarsipkan file
+            spreadsheet Excel (.xlsx) untuk evaluasi dan riset tanaman.
           </p>
         </div>
-        <a href="/api/records/export-today" class="btn-figma-primary" id="btn-export-today" style="text-decoration: none;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <a href="/api/records/export-today" class="btn-figma-primary" id="btn-export-today"
+          style="text-decoration: none;" download>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -1053,7 +1778,7 @@
         </a>
       </div>
 
-      <!-- 4 Daily Averages -->
+      <!-- 4 Kartu Rata-Rata Harian -->
       <div class="stat-cards-row-4">
         <div class="card-white-box">
           <div class="card-label-small">RATA-RATA TANAH</div>
@@ -1094,7 +1819,7 @@
         <div class="card-white-box">
           <div class="card-label-small">BATERAI &amp; SIKLUS SIRAM</div>
           <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
-            <span class="stat-huge-number" id="rec-bat-avg">53.2</span>
+            <span class="stat-huge-number" id="rec-bat-avg">12.6</span>
             <span class="stat-unit-text">V (<span id="rec-bat-pct">94</span>%)</span>
           </div>
           <div class="card-bottom-info">
@@ -1104,9 +1829,10 @@
         </div>
       </div>
 
-      <!-- Archive Table -->
+      <!-- Tabel Arsip Excel Harian -->
       <div class="mesh-table-wrapper">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
           <h3 style="font-size: 1.1rem; font-weight: 800;">Arsip File Excel Harian (.xlsx)</h3>
           <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">
             Auto-refresh setiap 10 detik
@@ -1118,7 +1844,7 @@
             <tr>
               <th>Nama File</th>
               <th>Tanggal Laporan</th>
-              <th>Struktur Sheet</th>
+              <th>Struktur Lembar</th>
               <th>Ukuran File</th>
               <th>Status</th>
               <th style="text-align: right;">Aksi Unduh</th>
@@ -1136,13 +1862,14 @@
     </section>
 
     <!-- ========================================================================
-         SECTION 6: TERMINAL (Real-time Developer Console)
+         BAGIAN 6: AKTIVITAS SISTEM REAL-TIME (Log Ramah Pengguna)
          ======================================================================== -->
     <section class="page-section-block" id="terminal">
       <div class="view-header-row">
         <div>
-          <h2 class="view-headline">Developer Terminal &amp; Event Stream</h2>
-          <p class="view-subhead">Direct raw socket stream from ESP32 nodes and IoT Gateway.</p>
+          <h2 class="view-headline">Catatan Aktivitas Sistem Real-Time</h2>
+          <p class="view-subhead">Log riwayat pembacaan sensor, perintah kontrol relay pompa, dan status konektivitas
+            perangkat IoT.</p>
         </div>
       </div>
 
@@ -1154,35 +1881,38 @@
             <span class="dot-green-term"></span>
           </div>
           <div style="font-family: var(--font-mono); font-size: 0.75rem; color: #94a3b8;">
-            tty0@smart-agritech: ~ / telemetry-mesh-stream
+            sistem@smart-agritech: ~ / log-aktivitas-sensor
           </div>
           <span style="font-family: var(--font-mono); font-size: 0.7rem; color: #64748b;">
-            100Hz STREAM
+            STREAM AKTIF
           </span>
         </div>
         <div class="terminal-stream-inner" id="terminal-stream">
-          <!-- Populated by app.js -->
+          <!-- Diisi otomatis oleh app.js -->
         </div>
       </div>
     </section>
 
     <!-- ========================================================================
-         FOOTER (Matching Figma Reference Footer)
+         FOOTER
          ======================================================================== -->
     <footer class="figma-footer">
       <div>
-        &copy; 2026 Smart Agri Tech Systems. Telemetry mesh active &bull; ISO-22000 compliant.
+        &copy; 2026 Smart AgriTech Systems. Sistem Monitoring &amp; Otomasi Hidroponik Berbasis IoT.
       </div>
       <div style="display: flex; gap: 1.5rem;">
-        <span style="color: var(--brand-emerald);">● Mesh Network: 14 Nodes Synced</span>
-        <span>Latency: 12ms</span>
+        <span style="color: var(--brand-emerald); display: inline-flex; align-items: center; gap: 0.35rem;">
+          <span class="dot-indicator dot-green"></span> Modul ESP32 Terhubung
+        </span>
+        <span>Latensi: 14ms</span>
       </div>
     </footer>
   </main>
 
-  <!-- Scripts -->
+  <!-- Skrip JS -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script src="/js/chart.js"></script>
-  <script src="/js/app.js"></script>
+  <script src="/js/chart.js?v=20261012b"></script>
+  <script src="/js/app.js?v=20261012b"></script>
 </body>
+
 </html>

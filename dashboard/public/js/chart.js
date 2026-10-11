@@ -277,27 +277,27 @@ class PhosphorChart {
 
       if (this.id === 'metricsChart1') {
         ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
-        ctx.fillText(`⏱ ${d.time || '--'}`, ttX + 8, ttY + 14);
+        ctx.fillText(`Waktu: ${d.time || '--'}`, ttX + 8, ttY + 14);
 
         ctx.fillStyle = '#10b981';
-        ctx.fillText(`● FDR-01 VWC: ${Number(d.soilMoisture || 68.4).toFixed(1)}%`, ttX + 8, ttY + 30);
+        ctx.fillText(`● Kelembapan: ${Number(d.soilMoisture || 68.4).toFixed(1)}%`, ttX + 8, ttY + 30);
 
         ctx.fillStyle = '#0ea5e9';
-        ctx.fillText(`● FDR-02 VWC: ${(Number(d.soilMoisture || 68.4) * 0.94 + 2.5).toFixed(1)}%`, ttX + 8, ttY + 46);
+        ctx.fillText(`● Target Aman: 50.0%`, ttX + 8, ttY + 46);
 
       } else if (this.id === 'metricsChart2') {
         ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
-        ctx.fillText(`⏱ ${d.time || '--'}`, ttX + 8, ttY + 14);
+        ctx.fillText(`Waktu: ${d.time || '--'}`, ttX + 8, ttY + 14);
 
         ctx.fillStyle = '#0ea5e9';
-        ctx.fillText(`● Air Temp: ${Number(d.airTemp || 24.2).toFixed(1)}°C`, ttX + 8, ttY + 30);
+        ctx.fillText(`● Suhu Udara: ${Number(d.airTemp || 24.2).toFixed(1)}°C`, ttX + 8, ttY + 30);
 
         ctx.fillStyle = '#10b981';
-        ctx.fillText(`● Root Bed: ${(Number(d.airTemp || 24.2) * 0.88 + 0.2).toFixed(1)}°C`, ttX + 8, ttY + 46);
+        ctx.fillText(`● Suhu Media: ${(Number(d.airTemp || 24.2) * 0.88 + 0.2).toFixed(1)}°C`, ttX + 8, ttY + 46);
 
       } else {
         ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
-        ctx.fillText(`⏱ ${d.time || '--'}`, ttX + 8, ttY + 14);
+        ctx.fillText(`Waktu: ${d.time || '--'}`, ttX + 8, ttY + 14);
 
         ctx.fillStyle = '#10b981';
         ctx.fillText(`● Tanah: ${d.soilMoisture}%`, ttX + 8, ttY + 29);

@@ -3,6 +3,8 @@
 
 **Theme:** dark
 
+Source measurements are normalized; roles and recommendations are interpreted. Font summary lists are independent, not paired by position. HTML examples are reconstructions, not source components.
+
 Modal operates as a phosphorescent terminal in a darkened server room: near-black canvas, phosphor-pale green type, and a single vivid lime accent that behaves like an LED status indicator. The design language is developer-native — monospaced code windows with traffic-light dots, isometric 3D icons rendered in the brand green, and generous negative space that lets one element per section glow. Typography is split between a custom display face (Goga) for headlines and a variable Inter for all UI chrome, both tuned with tight negative tracking. Color is rationed: most screens are achromatic, and the vivid lime green appears only on primary actions, the logo, 3D illustrations, and emphasis moments. Components are flat and borderless, relying on hairline green-tinted borders and backdrop blur rather than shadows for depth.
 
 ## Tokens — Colors
@@ -48,16 +50,16 @@ Modal operates as a phosphorescent terminal in a darkened server room: near-blac
 
 ### Type Scale
 
-| Role | Size | Line Height | Letter Spacing | Token |
-|------|------|-------------|----------------|-------|
-| caption | 12px | 1.33 | 0.6px | `--text-caption` |
-| body-sm | 14px | 1.43 | -0.364px | `--text-body-sm` |
-| body | 16px | 1.5 | -0.352px | `--text-body` |
-| subheading | 20px | 1.5 | -0.36px | `--text-subheading` |
-| heading-sm | 24px | 1.3 | -0.312px | `--text-heading-sm` |
-| heading | 30px | 1.2 | -0.36px | `--text-heading` |
-| heading-lg | 42px | 1.05 | -0.336px | `--text-heading-lg` |
-| display | 64px | 1 | -0.448px | `--text-display` |
+| Role | Family | Weight | Size | Line Height | Letter Spacing | Token |
+|------|--------|--------|------|-------------|----------------|-------|
+| caption | — | — | 12px | 1.33 | 0.6px | `--text-caption` |
+| body-sm | — | — | 14px | 1.43 | -0.364px | `--text-body-sm` |
+| body | — | — | 16px | 1.5 | -0.352px | `--text-body` |
+| subheading | — | — | 20px | 1.5 | -0.36px | `--text-subheading` |
+| heading-sm | — | — | 24px | 1.3 | -0.312px | `--text-heading-sm` |
+| heading | — | — | 30px | 1.2 | -0.36px | `--text-heading` |
+| heading-lg | — | — | 42px | 1.05 | -0.336px | `--text-heading-lg` |
+| display | — | — | 64px | 1 | -0.448px | `--text-display` |
 
 ## Tokens — Spacing & Shapes
 

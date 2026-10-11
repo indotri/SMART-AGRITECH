@@ -1,5 +1,5 @@
 // ==========================================================================
-// Smart Agri Tech OS — Single-Page Continuous Telemetry Engine & ScrollSpy
+// Smart AgriTech — Mesin Telemetri Real-Time & ScrollSpy (Bahasa Indonesia)
 // ==========================================================================
 
 let mainChart = null;
@@ -8,31 +8,39 @@ let metricsChart2 = null;
 let trendsChart = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Chart Instances
-  mainChart = new PhosphorChart('telemetryCanvas');
-  metricsChart1 = new PhosphorChart('metricsChart1');
-  metricsChart2 = new PhosphorChart('metricsChart2');
-  trendsChart = new PhosphorChart('trendsMainCanvas');
+  // Inisialisasi Instance Grafik
+  if (typeof PhosphorChart !== 'undefined') {
+    if (document.getElementById('telemetryCanvas')) mainChart = new PhosphorChart('telemetryCanvas');
+    if (document.getElementById('metricsChart1')) metricsChart1 = new PhosphorChart('metricsChart1');
+    if (document.getElementById('metricsChart2')) metricsChart2 = new PhosphorChart('metricsChart2');
+    if (document.getElementById('trendsMainCanvas')) trendsChart = new PhosphorChart('trendsMainCanvas');
+  }
 
-  // DOM Elements - Overview & Metrics
+  // DOM Elements - Ringkasan & Parameter
   const elSoilOverview = document.getElementById('val-soil-overview');
   const barSoilOverview = document.getElementById('bar-soil-overview');
   const elTempOverview = document.getElementById('val-temp-overview');
-  const elPhOverview = document.getElementById('val-ph-overview');
+  const elHumOverview = document.getElementById('val-hum-overview');
+  const elBatOverview = document.getElementById('val-bat-overview');
+  const elBatPctOverview = document.getElementById('val-bat-pct-overview');
+  const barBatOverview = document.getElementById('bar-bat-overview');
   const elSoilMetrics = document.getElementById('val-soil-metrics');
 
-  // Actuators
+  // Kontrol Perangkat & Pompa
   const emergencyBtn = document.getElementById('emergency-shutoff-btn');
   const quickPumpToggle = document.getElementById('quick-pump-toggle');
+  const mainPumpToggle = document.getElementById('main-pump-toggle');
+  const pumpStateText = document.getElementById('pump-state-text');
+  const pumpVisualRing = document.getElementById('pump-visual-ring');
 
-  // System Controls
+  // Kontrol Sistem
   const simToggleBtn = document.getElementById('sim-toggle-btn');
   const simStateText = document.getElementById('sim-state-text');
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
   const themeIcon = document.getElementById('theme-icon');
   const terminalStream = document.getElementById('terminal-stream');
 
-  // Records Elements
+  // Elemen Riwayat & Laporan Excel
   const recSoilAvg = document.getElementById('rec-soil-avg');
   const recSoilMin = document.getElementById('rec-soil-min');
   const recSoilMax = document.getElementById('rec-soil-max');
@@ -48,17 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const recSamplesCount = document.getElementById('rec-samples-count');
   const recordsTableBody = document.getElementById('records-table-body');
 
-  // State Management
+  // Status State
   let currentTelemetry = {
     soilMoisture: 68.4,
     airTemp: 24.2,
     airHumidity: 68.2,
-    pumpStatus: true,
-    batteryVoltage: 53.2,
+    pumpStatus: false,
+    batteryVoltage: 12.6,
     batteryPercent: 94,
     solarVoltage: 18.4,
-    tdsPpm: 115,
-    phVal: 6.25,
     timestamp: new Date().toISOString()
   };
 
@@ -67,14 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let clientSimInterval = null;
 
   // ==========================================================================
-  // SCROLL-SPY (Auto-highlight Active Nav Link while Scrolling)
+  // SCROLL-SPY (Sorot Link Navigasi Otomatis Saat Menggulir)
   // ==========================================================================
   const sections = document.querySelectorAll('.page-section-block');
   const navLinks = document.querySelectorAll('.nav-tab-btn');
 
   function onScrollSpy() {
     let currentSectionId = 'overview';
-    const scrollPos = window.scrollY + 120;
+    const scrollPos = window.scrollY + 130;
 
     sections.forEach(sec => {
       const top = sec.offsetTop;
@@ -95,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', onScrollSpy, { passive: true });
   onScrollSpy();
 
-  // Smooth scroll click handler
+  // Smooth scroll handler
   navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
       const targetId = link.getAttribute('href');
@@ -110,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==========================================================================
-  // THEME MANAGEMENT (Light by default, saved in localStorage)
+  // MANAJEMEN TEMA (Terang / Gelap - Tanpa Emoji)
   // ==========================================================================
   function initTheme() {
     const savedTheme = localStorage.getItem('agritech_theme') || 'light';
@@ -132,7 +138,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateThemeIcon(theme) {
     if (!themeIcon) return;
-    themeIcon.textContent = theme === 'dark' ? '🌙 DARK' : '☀️ LIGHT';
+    if (theme === 'dark') {
+      themeIcon.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <span>Gelap</span>
+      `;
+    } else {
+      themeIcon.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <span>Terang</span>
+      `;
+    }
   }
 
   if (themeToggleBtn) {
@@ -141,27 +169,57 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
 
   // ==========================================================================
-  // TELEMETRY UI UPDATER
+  // PEMBARUAN TAMPILAN TELEMETRI
   // ==========================================================================
   function updateTelemetryUI(data) {
     if (!data) return;
     currentTelemetry = { ...currentTelemetry, ...data };
 
+    // Kelembapan Tanah
     const soil = Number(currentTelemetry.soilMoisture);
     const soilStr = isNaN(soil) ? '68.4' : soil.toFixed(1);
-
     if (elSoilOverview) elSoilOverview.textContent = soilStr;
     if (barSoilOverview) barSoilOverview.style.width = `${Math.min(100, Math.max(0, soil))}%`;
     if (elSoilMetrics) elSoilMetrics.textContent = `${soilStr}%`;
 
+    // Suhu Udara
     const temp = Number(currentTelemetry.airTemp);
     if (elTempOverview) elTempOverview.textContent = isNaN(temp) ? '24.2' : temp.toFixed(1);
 
-    const ph = Number(currentTelemetry.phVal);
-    if (elPhOverview) elPhOverview.textContent = isNaN(ph) ? '6.25' : ph.toFixed(2);
+    // Kelembapan Udara
+    const hum = Number(currentTelemetry.airHumidity);
+    if (elHumOverview) elHumOverview.textContent = isNaN(hum) ? '68.2' : hum.toFixed(1);
 
-    if (quickPumpToggle) {
-      quickPumpToggle.checked = !!currentTelemetry.pumpStatus;
+    // Baterai & Daya
+    const batVolt = Number(currentTelemetry.batteryVoltage);
+    if (elBatOverview) elBatOverview.textContent = isNaN(batVolt) ? '12.6' : batVolt.toFixed(1);
+
+    const batPct = Number(currentTelemetry.batteryPercent);
+    if (elBatPctOverview) elBatPctOverview.textContent = isNaN(batPct) ? '94' : Math.round(batPct);
+    if (barBatOverview) barBatOverview.style.width = `${Math.min(100, Math.max(0, batPct || 94))}%`;
+
+    // Status Pompa Air
+    const isPumpOn = !!currentTelemetry.pumpStatus;
+    if (quickPumpToggle) quickPumpToggle.checked = isPumpOn;
+    if (mainPumpToggle) mainPumpToggle.checked = isPumpOn;
+
+    if (pumpStateText) {
+      pumpStateText.textContent = isPumpOn ? 'MENYIRAM (AKTIF)' : 'STANDBY (MATI)';
+      pumpStateText.style.color = isPumpOn ? 'var(--brand-emerald)' : 'var(--text-muted)';
+    }
+
+    if (pumpVisualRing) {
+      if (isPumpOn) {
+        pumpVisualRing.style.background = 'var(--color-green-bg)';
+        pumpVisualRing.style.borderColor = 'var(--brand-emerald)';
+        pumpVisualRing.style.color = 'var(--brand-emerald)';
+        pumpVisualRing.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.45)';
+      } else {
+        pumpVisualRing.style.background = 'var(--bg-subtle)';
+        pumpVisualRing.style.borderColor = 'var(--border-card)';
+        pumpVisualRing.style.color = 'var(--text-muted)';
+        pumpVisualRing.style.boxShadow = 'none';
+      }
     }
   }
 
@@ -170,33 +228,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const line = document.createElement('div');
     line.style.display = 'flex';
     line.style.gap = '0.75rem';
-    line.style.marginBottom = '0.25rem';
+    line.style.marginBottom = '0.35rem';
     line.style.wordBreak = 'break-all';
 
     const time = log.time || new Date().toTimeString().split(' ')[0];
     line.innerHTML = `
-      <span style="color: #64748b;">${time}</span>
-      <span style="color: #34d399; font-weight: 700;">[${log.source || 'CORE'}]</span>
-      <span style="color: #38bdf8;">${log.level || 'INFO'}:</span>
+      <span style="color: #64748b; font-family: var(--font-mono);">${time}</span>
+      <span style="color: #34d399; font-weight: 700;">[${log.source || 'SISTEM'}]</span>
+      <span style="color: #38bdf8; font-weight: 600;">${log.level || 'INFO'}:</span>
       <span>${log.message}</span>
     `;
 
     terminalStream.appendChild(line);
-    while (terminalStream.children.length > 60) {
+    while (terminalStream.children.length > 50) {
       terminalStream.removeChild(terminalStream.firstChild);
     }
     terminalStream.scrollTop = terminalStream.scrollHeight;
   }
 
   // ==========================================================================
-  // HYBRID ENGINE: SOCKET.IO (LOCAL/RENDER) & HTTP POLLING (VERCEL SERVERLESS)
+  // HYBRID ENGINE: SOCKET.IO (LOKAL) & HTTP POLLING (VERCEL SERVERLESS)
   // ==========================================================================
   const vercelPill = document.getElementById('vercel-status-pill');
   const serverPill = document.getElementById('server-status-pill');
   const latencyBadge = document.getElementById('socket-latency');
   let socket = null;
   let vercelPollingInterval = null;
-  let lastHardwareSeenTime = 0;
   let logDebounceCounter = 0;
 
   async function pollVercelTelemetry() {
@@ -209,32 +266,31 @@ document.addEventListener('DOMContentLoaded', () => {
       if (serverPill) {
         serverPill.innerHTML = `
           <span class="dot-indicator dot-green"></span>
-          <span>SERVER: <strong style="color: var(--brand-emerald);">VERCEL API</strong></span>
+          <span>Server <strong style="color: var(--brand-emerald);">Aktif</strong></span>
         `;
       }
 
       if (data.isHardwareLive && data.telemetry) {
-        // Hardware fisik ESP32 terhubung dan aktif!
         if (clientSimInterval) {
           clearInterval(clientSimInterval);
           clientSimInterval = null;
         }
 
         if (simStateText) {
-          simStateText.textContent = 'HARDWARE';
+          simStateText.textContent = 'Hardware';
           simStateText.style.color = 'var(--brand-emerald)';
         }
 
         if (vercelPill) {
           vercelPill.innerHTML = `
-            <span class="dot-indicator dot-green" style="box-shadow: 0 0 10px #10b981;"></span>
-            <span>ESP32 LIVE <strong style="color: var(--brand-emerald); font-size: 0.7rem;">(TERHUBUNG)</strong></span>
+            <span class="dot-indicator dot-green"></span>
+            <span>ESP32 <strong style="color: var(--brand-emerald);">Live</strong></span>
           `;
         }
 
         if (latencyBadge) {
           const secAgo = Math.round((Date.now() - (data.lastHardwarePing || Date.now())) / 1000);
-          latencyBadge.textContent = `${secAgo}s ago (HTTP)`;
+          latencyBadge.textContent = `${secAgo} dtk lalu`;
           latencyBadge.style.color = 'var(--brand-emerald)';
         }
 
@@ -257,15 +313,14 @@ document.addEventListener('DOMContentLoaded', () => {
           addTerminalLog({
             source: 'ESP32',
             level: 'DATA',
-            message: `Data Sensor Masuk: Tanah ${data.telemetry.soilMoisture}% | Suhu ${data.telemetry.airTemp}°C | RH ${data.telemetry.airHumidity}% | Bat ${data.telemetry.batteryVoltage}V`
+            message: `Data Sensor: Tanah ${data.telemetry.soilMoisture}% | Suhu ${data.telemetry.airTemp}°C | Udara ${data.telemetry.airHumidity}% | Daya ${data.telemetry.batteryVoltage}V`
           });
         }
       } else {
-        // Hardware belum mengirim data dalam 20 detik terakhir
         if (vercelPill) {
           vercelPill.innerHTML = `
             <span class="dot-indicator dot-yellow"></span>
-            <span>ESP32 STANDBY <span style="font-size: 0.65rem; color: #f59e0b;">(MENUNGGU SINYAL)</span></span>
+            <span>ESP32 <strong style="color: #f59e0b;">Siaga</strong></span>
           `;
         }
         if (latencyBadge) {
@@ -273,7 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
           latencyBadge.style.color = '#f59e0b';
         }
 
-        // Jika hardware belum aktif dan user ingin simulasi, jalankan mock simulator
         if (simActive && !clientSimInterval) {
           initMockTelemetryStream();
         }
@@ -287,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addTerminalLog({
       source: 'GATEWAY',
       level: 'INFO',
-      message: 'Mode Cloud Vercel aktif. Menghubungkan ke API /api/telemetry...'
+      message: 'Menghubungkan ke API Telemetri Cloud (/api/telemetry)...'
     });
     pollVercelTelemetry();
     if (!vercelPollingInterval) {
@@ -303,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(vercelPollingInterval);
         vercelPollingInterval = null;
       }
-      addTerminalLog({ source: 'NET', level: 'READY', message: 'Socket connection established with Hydroponics OS gateway.' });
+      addTerminalLog({ source: 'JARINGAN', level: 'SIAP', message: 'Koneksi Socket terhubung dengan Gateway Hidroponik.' });
     });
 
     socket.on('init', (data) => {
@@ -343,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // MOCK TELEMETRY STREAM FALLBACK
+  // SIMULATOR TELEMETRI CADANGAN
   // ==========================================================================
   function initMockTelemetryStream() {
     if (!clientSimInterval) {
@@ -356,10 +410,9 @@ document.addEventListener('DOMContentLoaded', () => {
           soilMoisture: +(68.4 + Math.sin(simStep * 0.3) * 1.5).toFixed(1),
           airTemp: +(24.2 + Math.cos(simStep * 0.2) * 0.8).toFixed(1),
           airHumidity: +(68.2 + Math.sin(simStep * 0.4) * 2.5).toFixed(1),
-          pumpStatus: true,
+          pumpStatus: currentTelemetry.pumpStatus,
           batteryVoltage: 12.6,
-          batteryPercent: 94,
-          phVal: +(6.25 + Math.sin(simStep * 0.1) * 0.05).toFixed(2)
+          batteryPercent: 94
         };
 
         updateTelemetryUI(point);
@@ -372,11 +425,48 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // CONTROLS & EMERGENCY SHUTOFF
+  // KONTROL POMPA AIR & PENGHENTIAN DARURAT
   // ==========================================================================
+  async function handlePumpToggle(targetState) {
+    currentTelemetry.pumpStatus = targetState;
+    updateTelemetryUI({ pumpStatus: targetState });
+
+    if (socket && socket.connected) {
+      socket.emit('setPump', targetState);
+    } else {
+      try {
+        await fetch('/api/telemetry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'set_pump', status: targetState })
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    addTerminalLog({
+      source: 'KONTROL',
+      level: 'PERINTAH',
+      message: `Status Pompa Nutrisi Diubah: ${targetState ? 'MENYALA (ON)' : 'DIMATIKAN (OFF)'}`
+    });
+  }
+
+  if (quickPumpToggle) {
+    quickPumpToggle.addEventListener('change', (e) => {
+      handlePumpToggle(e.target.checked);
+    });
+  }
+
+  if (mainPumpToggle) {
+    mainPumpToggle.addEventListener('change', (e) => {
+      handlePumpToggle(e.target.checked);
+    });
+  }
+
   if (emergencyBtn) {
     emergencyBtn.addEventListener('click', async () => {
-      const confirmShutoff = confirm('APAKAH ANDA YAKIN? Semua relai solenoid dan pompa akan dimatikan seketika.');
+      const confirmShutoff = confirm('PERINGATAN: Apakah Anda yakin ingin mematikan pompa air seketika demi keselamatan?');
       if (confirmShutoff) {
         if (socket && socket.connected) {
           socket.emit('emergencyShutoff');
@@ -389,28 +479,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           } catch (e) {}
         }
-        addTerminalLog({ source: 'SAFETY', level: 'WARN', message: 'EMERGENCY SHUTOFF TRIGGERED! Semua relai dinonaktifkan.' });
-        alert('Emergency Shutoff Berhasil Dijalankan.');
-      }
-    });
-  }
 
-  if (quickPumpToggle) {
-    quickPumpToggle.addEventListener('change', async (e) => {
-      const targetState = e.target.checked;
-      if (socket && socket.connected) {
-        socket.emit('setPump', targetState);
-      } else {
-        try {
-          await fetch('/api/telemetry', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'set_pump', status: targetState })
-          });
-          addTerminalLog({ source: 'CONTROL', level: 'CMD', message: `Override Pompa via Cloud: ${targetState ? 'MENYALA (ON)' : 'MATI (OFF)'}` });
-        } catch (e) {
-          console.error(e);
-        }
+        currentTelemetry.pumpStatus = false;
+        updateTelemetryUI({ pumpStatus: false });
+
+        addTerminalLog({
+          source: 'PROTEKSI',
+          level: 'DARURAT',
+          message: 'PENGHENTIAN DARURAT DIAKTIFKAN! Pompa segera dimatikan.'
+        });
+        alert('Penghentian Darurat Berhasil Dijalankan. Pompa telah dimatikan.');
       }
     });
   }
@@ -419,16 +497,20 @@ document.addEventListener('DOMContentLoaded', () => {
     simToggleBtn.addEventListener('click', () => {
       simActive = !simActive;
       if (simStateText) {
-        simStateText.textContent = simActive ? 'ON' : 'OFF';
+        simStateText.textContent = simActive ? 'Simulasi' : 'Manual';
         simStateText.style.color = simActive ? 'var(--brand-emerald)' : 'var(--text-subtle)';
       }
       if (socket && socket.connected) socket.emit('setSimulation', simActive);
-      addTerminalLog({ source: 'SIM', level: 'INFO', message: `Telemetry simulator toggled: ${simActive ? 'ACTIVE' : 'PAUSED'}` });
+      addTerminalLog({
+        source: 'SIMULASI',
+        level: 'INFO',
+        message: `Simulator telemetri: ${simActive ? 'DIAKTIFKAN' : 'DIJEDA'}`
+      });
     });
   }
 
   // ==========================================================================
-  // DAILY EXCEL & TELEMETRY RECORDS LOADER
+  // PEMUAT ARSIP LAPORAN EXCEL HARIAN (24 JAM)
   // ==========================================================================
   async function loadDailyRecords() {
     try {
@@ -451,24 +533,38 @@ document.addEventListener('DOMContentLoaded', () => {
         if (recHumMin) recHumMin.textContent = `${s.hum && s.hum.min != null ? s.hum.min : '58'}%`;
         if (recHumMax) recHumMax.textContent = `${s.hum && s.hum.max != null ? s.hum.max : '74'}%`;
 
-        if (recBatAvg) recBatAvg.textContent = s.batVolt && s.batVolt.avg != null ? s.batVolt.avg : '53.2';
+        if (recBatAvg) recBatAvg.textContent = s.batVolt && s.batVolt.avg != null ? s.batVolt.avg : '12.6';
         if (recBatPct) recBatPct.textContent = s.batPct && s.batPct.avg != null ? Math.round(s.batPct.avg) : '94';
         if (recPumpCycles) recPumpCycles.textContent = `${s.pumpCycles || 5}x`;
         if (recSamplesCount) recSamplesCount.textContent = s.count || 1420;
       }
 
       if (recordsTableBody) {
+        const fileSvg = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; color: var(--brand-emerald);">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        `;
+
         const reports = data.reports || [];
         if (reports.length === 0) {
           recordsTableBody.innerHTML = `
             <tr>
-              <td style="font-weight: 700; color: var(--brand-emerald);"><a href="/api/records/export-today" style="color: inherit; text-decoration: none;">📄 hydro_telemetry_2026-10-09.xlsx</a></td>
-              <td>Hari Ini (Real-time)</td>
-              <td>Ringkasan &amp; 24H Sensor Log</td>
+              <td style="font-weight: 700; color: var(--brand-emerald);">
+                <a href="/api/records/export-today" style="color: inherit; text-decoration: none; display: flex; align-items: center;">
+                  ${fileSvg} laporan_hidroponik_hari_ini.xlsx
+                </a>
+              </td>
+              <td>Hari Ini (Real-Time)</td>
+              <td>Ringkasan &amp; Log Sensor 24H</td>
               <td>12.4 KB</td>
               <td><span class="badge-pill-green">AKTIF</span></td>
               <td style="text-align: right;">
-                <a href="/api/records/export-today" class="btn-figma-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; text-decoration: none;" download>Unduh .xlsx</a>
+                <a href="/api/records/export-today" class="btn-figma-primary" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; text-decoration: none;" download>Unduh .xlsx</a>
               </td>
             </tr>
           `;
@@ -477,13 +573,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const dlUrl = a.isToday ? '/api/records/export-today' : `/api/records/download/${a.filename}`;
             return `
               <tr>
-                <td style="font-weight: 700; color: var(--brand-emerald);"><a href="${dlUrl}" style="color: inherit; text-decoration: none;">📄 ${a.filename}</a></td>
+                <td style="font-weight: 700; color: var(--brand-emerald);">
+                  <a href="${dlUrl}" style="color: inherit; text-decoration: none; display: flex; align-items: center;">
+                    ${fileSvg} ${a.filename}
+                  </a>
+                </td>
                 <td>${a.date || '--'}</td>
-                <td>Ringkasan &amp; 24H Sensor Log</td>
+                <td>Ringkasan &amp; Log Sensor 24H</td>
                 <td>${a.sizeFormatted || (a.sizeBytes ? (a.sizeBytes / 1024).toFixed(1) + ' KB' : '12.1 KB')}</td>
-                <td><span class="badge-pill-green">${a.isToday ? 'AKTIF (HARI INI)' : 'TEREKAM'}</span></td>
+                <td><span class="badge-pill-green">${a.isToday ? 'AKTIF (HARI INI)' : 'TERARSIP'}</span></td>
                 <td style="text-align: right;">
-                  <a href="${dlUrl}" class="btn-figma-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; text-decoration: none;" download>Unduh .xlsx</a>
+                  <a href="${dlUrl}" class="btn-figma-primary" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; text-decoration: none;" download>Unduh .xlsx</a>
                 </td>
               </tr>
             `;
@@ -495,6 +595,261 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ==========================================================================
+  // 3D INTERACTIVE MODAL CUBE & HYDROPONIC SPROUT ENGINE (Hero Section)
+  // ==========================================================================
+  function initHeroModalCube() {
+    const heroArea = document.getElementById('hero-cube-area');
+    const cubeStage = document.getElementById('cube-stage-3d');
+    const cubeRotator = document.getElementById('cube-rotator');
+    const sproutSculpture = document.getElementById('sprout-sculpture');
+    const surfaceRipple = document.getElementById('cube-surface-ripple');
+    const radialBloom = document.getElementById('cube-radial-bloom');
+    const groundShadow = document.getElementById('cube-ground-shadow');
+    const statusBadge = document.getElementById('cube-status-badge');
+    const badgeText = document.getElementById('cube-badge-text');
+    const clickCountElem = document.getElementById('cube-click-count');
+    const clickPill = document.getElementById('cube-click-counter-pill');
+    const particlesContainer = document.getElementById('cube-ambient-particles');
+
+    if (!cubeRotator || !heroArea) return;
+
+    // Koordinat Rotasi Dasar (Isometric Perspective)
+    const baseRotX = -24;
+    const baseRotY = -36;
+
+    let currentRotX = baseRotX;
+    let currentRotY = baseRotY;
+    let targetRotX = baseRotX;
+    let targetRotY = baseRotY;
+
+    let mouseNormX = 0;
+    let mouseNormY = 0;
+    let isHovering = false;
+    let clickCount = 0;
+    let animTime = 0;
+
+    // Siklus Pesan Interaksi Tunas & Nutrisi
+    const nutrientMessages = [
+      '💧 Impuls Nutrisi Hidroponik Terkirim (+100%)',
+      '🌱 Tunas Menyerap Cairan Nutrisi Otomatis',
+      '☀️ Panel Surya Mandiri Menyalurkan Energi Bersih',
+      '✨ Kanopi Daun Tumbuh Segar & Sehat',
+      '⚡ Siklus Telemetri ESP32 Berhasil Diperbarui',
+      '🌿 Kelembapan Media Tanam Terjaga 68.4% Optimal'
+    ];
+    let msgIndex = 0;
+
+    // Render Loop 60fps dengan Lerp Damping
+    function renderCubeFrame() {
+      animTime += 16;
+
+      // Animasi Ambience Terapung Halus Saat Kursor Diam
+      const ambientBob = Math.sin(animTime * 0.002) * 6;
+      const ambientTiltX = Math.sin(animTime * 0.0016) * 2.2;
+      const ambientTiltY = Math.cos(animTime * 0.0018) * 3;
+
+      if (isHovering) {
+        targetRotX = baseRotX - mouseNormY * 24;
+        targetRotY = baseRotY + mouseNormX * 32;
+      } else {
+        targetRotX = baseRotX + ambientTiltX;
+        targetRotY = baseRotY + ambientTiltY;
+      }
+
+      // Smooth Lerp Interpolation
+      currentRotX += (targetRotX - currentRotX) * 0.085;
+      currentRotY += (targetRotY - currentRotY) * 0.085;
+
+      const bobY = isHovering ? (mouseNormY * -8) : ambientBob;
+
+      // Terapkan Transformasi 3D ke Kubus
+      cubeRotator.style.transform = `rotateX(${currentRotX.toFixed(2)}deg) rotateY(${currentRotY.toFixed(2)}deg) translateY(${bobY.toFixed(2)}px)`;
+
+      // Sinkronisasi Bayangan Kontak Bawah
+      if (groundShadow) {
+        const shadowScale = isHovering ? 1.05 : (1 + ambientBob * 0.015);
+        groundShadow.style.transform = `rotateX(74deg) translateZ(-40px) scale(${shadowScale.toFixed(3)})`;
+        groundShadow.style.opacity = isHovering ? '0.9' : '0.75';
+      }
+
+      // Parallax Halus pada Cahaya Radial Bloom
+      if (radialBloom) {
+        const bloomX = mouseNormX * 35;
+        const bloomY = mouseNormY * 35;
+        radialBloom.style.transform = `translate(${bloomX.toFixed(1)}px, ${bloomY.toFixed(1)}px)`;
+      }
+
+      requestAnimationFrame(renderCubeFrame);
+    }
+    requestAnimationFrame(renderCubeFrame);
+
+    // Pelacak Gerakan Mouse (Mousemove Tracking)
+    function handlePointerMove(e) {
+      const rect = heroArea.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      mouseNormX = Math.max(-1.2, Math.min(1.2, ((clientX - rect.left) / rect.width - 0.5) * 2));
+      mouseNormY = Math.max(-1.2, Math.min(1.2, ((clientY - rect.top) / rect.height - 0.5) * 2));
+      isHovering = true;
+    }
+
+    heroArea.addEventListener('mousemove', handlePointerMove, { passive: true });
+    heroArea.addEventListener('touchmove', handlePointerMove, { passive: true });
+
+    heroArea.addEventListener('mouseleave', () => {
+      isHovering = false;
+      mouseNormX = 0;
+      mouseNormY = 0;
+    });
+
+    heroArea.addEventListener('touchend', () => {
+      isHovering = false;
+      mouseNormX = 0;
+      mouseNormY = 0;
+    });
+
+    // Interaksi Tekan (Mousedown / Pointerdown)
+    function onPointerDown() {
+      cubeRotator.classList.add('is-pressed');
+    }
+
+    function onPointerUp() {
+      cubeRotator.classList.remove('is-pressed');
+    }
+
+    if (cubeStage) {
+      cubeStage.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointerup', onPointerUp);
+    }
+
+    // Ledakan Partikel Cahaya Nutrisi (Particle Eruption)
+    function spawnNutrientSparks() {
+      if (!particlesContainer) return;
+      const count = 9;
+      const colors = ['#7fee64', '#34d399', '#ddffdc', '#b8ff9e', '#ffffff'];
+
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'hero-particle';
+
+        const size = Math.floor(Math.random() * 8) + 5;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const spreadX = (Math.random() - 0.5) * 160;
+        const spreadY = -(Math.random() * 110 + 60);
+
+        p.style.width = `${size}px`;
+        p.style.height = `${size}px`;
+        p.style.background = color;
+        p.style.boxShadow = `0 0 10px ${color}`;
+        p.style.left = '50%';
+        p.style.top = '45%';
+        p.style.setProperty('--tx', `${spreadX.toFixed(1)}px`);
+        p.style.setProperty('--ty', `${spreadY.toFixed(1)}px`);
+
+        particlesContainer.appendChild(p);
+
+        setTimeout(() => {
+          if (p.parentNode) p.parentNode.removeChild(p);
+        }, 1000);
+      }
+    }
+
+    // Aksi Klik Interaktif (Triggering Animations, Sprout Bloom & Status Updates)
+    function handleCubeClick(e) {
+      clickCount++;
+
+      // Perbarui Penghitung Nutrisi
+      if (clickCountElem) clickCountElem.textContent = clickCount;
+      if (clickPill) {
+        clickPill.classList.remove('pulse');
+        void clickPill.offsetWidth;
+        clickPill.classList.add('pulse');
+      }
+
+      // Animasi Reaksi Tunas (Sprout Springs Up & Blooms)
+      if (sproutSculpture) {
+        sproutSculpture.classList.remove('bounce-trigger');
+        void sproutSculpture.offsetWidth;
+        sproutSculpture.classList.add('bounce-trigger');
+      }
+
+      // Gelombang Ripple di Permukaan Wajah Atas
+      if (surfaceRipple) {
+        surfaceRipple.classList.remove('trigger');
+        void surfaceRipple.offsetWidth;
+        surfaceRipple.classList.add('trigger');
+      }
+
+      // Ledakan Partikel Nutrisi Bercahaya
+      spawnNutrientSparks();
+
+      // Perbarui Teks Status Badge
+      if (badgeText && statusBadge) {
+        msgIndex = (msgIndex + 1) % nutrientMessages.length;
+        badgeText.textContent = nutrientMessages[msgIndex];
+        statusBadge.classList.remove('highlight');
+        void statusBadge.offsetWidth;
+        statusBadge.classList.add('highlight');
+        setTimeout(() => statusBadge.classList.remove('highlight'), 1800);
+      }
+
+      // Log Aktivitas ke Terminal Sistem
+      if (typeof addTerminalLog === 'function') {
+        addTerminalLog({
+          source: 'TUNAS_IOT',
+          level: 'INFO',
+          message: `Impuls nutrisi tunas disiram manual (#${clickCount}) — Status pertumbuhan: SANGAT OPTIMAL`
+        });
+      }
+    }
+
+    if (cubeStage) {
+      cubeStage.addEventListener('click', handleCubeClick);
+      cubeStage.addEventListener('touchend', (e) => {
+        handleCubeClick(e);
+      }, { passive: true });
+    }
+    if (cubeRotator) {
+      cubeRotator.addEventListener('click', handleCubeClick);
+    }
+    if (statusBadge) {
+      statusBadge.addEventListener('click', handleCubeClick);
+    }
+  }
+
+  // Nav Tab Active State & ScrollSpy
+  const navTabs = document.querySelectorAll('.nav-tab-btn');
+  navTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      navTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+
+  const sectionIds = ['metrics', 'trends', 'records', 'terminal'];
+  const observedSections = sectionIds.map(id => document.getElementById(id)).filter(Boolean);
+  window.addEventListener('scroll', () => {
+    const scrollPos = window.scrollY + 140;
+    for (let i = observedSections.length - 1; i >= 0; i--) {
+      const sec = observedSections[i];
+      if (sec.offsetTop <= scrollPos) {
+        navTabs.forEach(t => {
+          if (t.getAttribute('href') === `#${sec.id}`) {
+            t.classList.add('active');
+          } else {
+            t.classList.remove('active');
+          }
+        });
+        break;
+      }
+    }
+  }, { passive: true });
+
+  initHeroModalCube();
+
   loadDailyRecords();
   setInterval(loadDailyRecords, 10000);
 });
+
