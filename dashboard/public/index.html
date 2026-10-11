@@ -7,7 +7,7 @@
   <title>Smart AgriTech — Sistem Monitoring &amp; Otomasi Hidroponik IoT</title>
   <meta name="description"
     content="Sistem monitoring dan otomasi hidroponik presisi dengan sensor ESP32, pelacakan data real-time, kendali relay pompa nutrisi, dan laporan Excel harian.">
-  <link rel="stylesheet" href="/css/style.css?v=20261012e">
+  <link rel="stylesheet" href="/css/style.css?v=20261012j">
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z'></path><path d='M12 6v12'></path><path d='M12 12c2.5-3 5-3 5-3'></path><path d='M12 15c-2.5-3-5-3-5-3'></path></svg>">
   <style id="hero-modal-cube-css">
@@ -18,8 +18,9 @@
       position: relative;
       width: 100%;
       max-width: 780px;
-      height: 380px;
-      margin: 0.75rem auto 2.5rem;
+      height: 400px;
+      margin: 2.25rem auto 3rem;
+      padding-top: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -412,34 +413,52 @@
       background: #021f0d;
     }
 
-    /* SPROUT SCULPTURE */
+    /* ==========================================================================
+       3D LIVING HYDROPONIC SPROUT SCULPTURE (GENUINE 3D MULTI-PLANAR DEPTH)
+       ========================================================================== */
     .sprout-sculpture {
       position: absolute;
-      width: 160px;
-      height: 200px;
       left: 50%;
       top: 50%;
-      margin-left: -80px;
-      margin-top: -192px;
-      transform-origin: 80px 185px;
-      transform: translateY(-90px) translateZ(0);
+      width: 140px;
+      height: 150px;
+      margin-left: -70px;
+      margin-top: -140px;
+      transform-origin: 70px 140px;
+      transform: translateY(-75px) translateZ(0);
       transform-style: preserve-3d;
       pointer-events: none;
       z-index: 10;
       will-change: transform;
     }
 
-    .sprout-svg {
-      width: 160px !important;
-      height: 200px !important;
-      max-width: 160px !important;
-      display: block;
-      overflow: visible;
-      filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+    /* 1. Base Root Collar & Nutrient Well */
+    .sprout-3d-root-collar {
+      position: absolute;
+      left: 50%;
+      top: 136px;
+      transform: translateX(-50%) rotateX(90deg);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      transform-style: preserve-3d;
     }
 
-    .sprout-root-aura {
+    .root-water-glow {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(127, 238, 100, 0.85) 0%, rgba(16, 185, 129, 0.35) 60%, transparent 100%);
+      filter: blur(6px);
       animation: rootAuraBreath 3s ease-in-out infinite alternate;
+    }
+
+    .root-rim-3d {
+      position: absolute;
+      inset: 2px;
+      border-radius: 50%;
+      border: 2px solid rgba(134, 239, 172, 0.7);
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.6), inset 0 0 6px rgba(16, 185, 129, 0.5);
     }
 
     @keyframes rootAuraBreath {
@@ -454,79 +473,375 @@
       }
     }
 
-    .sprout-leaf.leaf-left {
-      transform-origin: 79px 116px;
-      animation: leafSwayLeft 5.5s ease-in-out infinite alternate;
+    /* 2. Projected Contact Shadow on Cube Top Face */
+    .sprout-projected-shadow {
+      position: absolute;
+      left: 50%;
+      top: 138px;
+      width: 60px;
+      height: 22px;
+      margin-left: -30px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      filter: blur(5px);
+      transform: rotateX(90deg) translateZ(-2px);
+      pointer-events: none;
     }
 
-    @keyframes leafSwayLeft {
+    /* 3. TRUE 3D CYLINDRICAL STEM (ELONGATED 70PX 8-FACETED CYLINDER) */
+    .sprout-cylinder-stem {
+      position: absolute;
+      left: 50%;
+      top: 66px;
+      width: 14px;
+      height: 70px;
+      margin-left: -7px;
+      transform-origin: center bottom;
+      transform: translate3d(0, 0, 8px) rotateX(4deg) rotateZ(-1deg);
+      transform-style: preserve-3d;
+      animation: stemSubtleSway 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes stemSubtleSway {
       0% {
-        transform: rotate(0deg);
+        transform: translate3d(0, 0, 8px) rotateX(4deg) rotateZ(-1deg);
       }
 
       50% {
-        transform: rotate(-4.5deg);
+        transform: translate3d(0, 0, 9px) rotateX(6deg) rotateZ(1deg);
       }
 
       100% {
-        transform: rotate(1deg);
+        transform: translate3d(0, 0, 8px) rotateX(3deg) rotateZ(-2deg);
       }
     }
 
-    .sprout-leaf.leaf-right {
-      transform-origin: 81px 110px;
-      animation: leafSwayRight 6s ease-in-out infinite alternate;
+    .stem-facet {
+      position: absolute;
+      top: 0;
+      left: 4px;
+      width: 6px;
+      height: 100%;
+      border-radius: 2px;
+      backface-visibility: visible;
     }
 
-    @keyframes leafSwayRight {
+    /* 8 Facets in cylindrical layout around Y-axis (radius ~7px) */
+    .facet-front {
+      transform: rotateY(0deg) translateZ(7px);
+      background: linear-gradient(180deg, #bbf7d0 0%, #34d399 35%, #16a34a 75%, #14532d 100%);
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.6);
+    }
+
+    .facet-front-right {
+      transform: rotateY(45deg) translateZ(7px);
+      background: linear-gradient(180deg, #86efac 0%, #22c55e 40%, #15803d 80%, #064e3b 100%);
+    }
+
+    .facet-right {
+      transform: rotateY(90deg) translateZ(7px);
+      background: linear-gradient(180deg, #4ade80 0%, #16a34a 45%, #14532d 85%, #052e16 100%);
+    }
+
+    .facet-back-right {
+      transform: rotateY(135deg) translateZ(7px);
+      background: linear-gradient(180deg, #22c55e 0%, #15803d 50%, #064e3b 90%, #022c22 100%);
+    }
+
+    .facet-back {
+      transform: rotateY(180deg) translateZ(7px);
+      background: linear-gradient(180deg, #16a34a 0%, #14532d 50%, #052e16 90%, #022c22 100%);
+    }
+
+    .facet-back-left {
+      transform: rotateY(225deg) translateZ(7px);
+      background: linear-gradient(180deg, #22c55e 0%, #15803d 50%, #064e3b 90%, #052e16 100%);
+    }
+
+    .facet-left {
+      transform: rotateY(270deg) translateZ(7px);
+      background: linear-gradient(180deg, #6ee7b7 0%, #16a34a 45%, #14532d 85%, #064e3b 100%);
+    }
+
+    .facet-front-left {
+      transform: rotateY(315deg) translateZ(7px);
+      background: linear-gradient(180deg, #ddffdc 0%, #4ade80 35%, #16a34a 75%, #14532d 100%);
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.7);
+    }
+
+    .stem-core-spine {
+      position: absolute;
+      inset: 0;
+      border-radius: 7px;
+      background: linear-gradient(90deg, #064e3b 0%, #16a34a 25%, #86efac 50%, #22c55e 75%, #052e16 100%);
+      box-shadow: 0 0 10px rgba(127, 238, 100, 0.45);
+    }
+
+    .stem-ring {
+      position: absolute;
+      left: -2px;
+      width: 18px;
+      height: 6px;
+      border-radius: 50%;
+      transform: rotateX(85deg);
+      background: radial-gradient(circle, #ecfdf5 0%, #34d399 50%, #064e3b 100%);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 6px rgba(134, 239, 172, 0.6);
+    }
+
+    .stem-ring-lower {
+      top: 72%;
+    }
+
+    .stem-ring-upper {
+      top: 38%;
+    }
+
+    /* 4. TRUE 3D LEAF ASSEMBLIES WITH V-FOLD VOLUMETRIC WINGS */
+    .sprout-leaf-3d-assembly {
+      position: absolute;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    /* Left Leaf Assembly (Branches Outward-Left-Forward) */
+    .sprout-leaf-3d-assembly.leaf-left-assembly {
+      left: 50%;
+      top: -2px;
+      width: 90px;
+      height: 68px;
+      margin-left: -45px;
+      transform-origin: 45px 68px;
+      transform: translate3d(0, 0, 16px) rotateZ(-58deg) rotateY(-24deg) rotateX(16deg);
+      animation: leaf3dLeftSway 5.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes leaf3dLeftSway {
       0% {
-        transform: rotate(0deg);
+        transform: translate3d(0, 0, 16px) rotateZ(-58deg) rotateY(-24deg) rotateX(16deg);
       }
 
       50% {
-        transform: rotate(5deg);
+        transform: translate3d(0, 0, 20px) rotateZ(-63deg) rotateY(-28deg) rotateX(20deg);
       }
 
       100% {
-        transform: rotate(-1.5deg);
+        transform: translate3d(0, 0, 14px) rotateZ(-54deg) rotateY(-20deg) rotateX(12deg);
       }
     }
 
-    .sprout-shoot {
-      transform-origin: 80px 94px;
-      animation: shootNod 4s ease-in-out infinite alternate;
+    /* Right Leaf Assembly (Branches Outward-Right-Backward) */
+    .sprout-leaf-3d-assembly.leaf-right-assembly {
+      left: 50%;
+      top: -2px;
+      width: 90px;
+      height: 68px;
+      margin-left: -45px;
+      transform-origin: 45px 68px;
+      transform: translate3d(0, 0, 10px) rotateZ(56deg) rotateY(26deg) rotateX(-12deg);
+      animation: leaf3dRightSway 6s ease-in-out infinite alternate;
     }
 
-    @keyframes shootNod {
+    @keyframes leaf3dRightSway {
       0% {
-        transform: rotate(0deg);
+        transform: translate3d(0, 0, 10px) rotateZ(56deg) rotateY(26deg) rotateX(-12deg);
       }
 
       50% {
-        transform: rotate(2deg) scale(1.03);
+        transform: translate3d(0, 0, 13px) rotateZ(60deg) rotateY(30deg) rotateX(-8deg);
       }
 
       100% {
-        transform: rotate(-2deg);
+        transform: translate3d(0, 0, 8px) rotateZ(52deg) rotateY(22deg) rotateX(-15deg);
       }
     }
 
-    .sprout-dewdrop {
-      animation: dewdropTwinkle 3s ease-in-out infinite alternate;
+    /* 3D Blade Container */
+    .leaf-3d-blade {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
     }
 
-    @keyframes dewdropTwinkle {
+    /* 3D Midrib Spine (Extruded Volumetric Spine Ridge) */
+    .leaf-3d-midrib {
+      position: absolute;
+      left: 44px;
+      top: 0;
+      width: 3px;
+      height: 66px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #ffffff 0%, #bbf7d0 40%, #22c55e 80%, #15803d 100%);
+      transform: translateZ(3px);
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+      z-index: 5;
+    }
 
-      0%,
+    /* Blade Halves forming 3D V-Fold Cup */
+    .blade-half {
+      position: absolute;
+      top: 0;
+      width: 45px;
+      height: 68px;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    .blade-half-left {
+      left: 0;
+      transform-origin: right center;
+      transform: rotateY(-28deg);
+    }
+
+    .blade-half-right {
+      left: 45px;
+      transform-origin: left center;
+      transform: rotateY(28deg);
+    }
+
+    .blade-adaxial-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: visible;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+    }
+
+    .blade-adaxial-face svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .blade-abaxial-underside {
+      position: absolute;
+      inset: 0;
+      border-radius: 50% 50% 20% 20%;
+      background: linear-gradient(180deg, #15803d 0%, #064e3b 80%, #022c22 100%);
+      transform: translateZ(-2px);
+      opacity: 0.85;
+    }
+
+    .blade-edge-thickness {
+      position: absolute;
+      inset: -1px;
+      border-radius: 50% 50% 20% 20%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      pointer-events: none;
+    }
+
+    /* 3D Dewdrop Sphere on Leaf Fold */
+    .dewdrop-3d-sphere {
+      position: absolute;
+      left: 45px;
+      top: 24px;
+      width: 14px;
+      height: 14px;
+      margin-left: -7px;
+      transform-style: preserve-3d;
+      transform: translateZ(8px);
+      animation: dewdropHoverPulse 3s ease-in-out infinite alternate;
+      z-index: 10;
+    }
+
+    @keyframes dewdropHoverPulse {
+      0% {
+        transform: translateZ(8px) scale(0.95);
+      }
+
       100% {
-        transform: translate(136px, 68px) scale(1);
-        filter: drop-shadow(0 0 4px #7fee64);
+        transform: translateZ(10px) scale(1.12);
+      }
+    }
+
+    .dewdrop-sphere-body {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ffffff 0%, #bbf7d0 35%, #34d399 70%, #059669 100%);
+      box-shadow: 0 0 12px #34d399, 0 3px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .dewdrop-pin-specular {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 3px #ffffff;
+    }
+
+    .dewdrop-caustic-ring {
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      opacity: 0.7;
+    }
+
+    /* 5. 3D APICAL BUD SHOOT */
+    .sprout-3d-shoot-assembly {
+      position: absolute;
+      left: 50%;
+      top: 44px;
+      width: 16px;
+      height: 24px;
+      margin-left: -8px;
+      transform-style: preserve-3d;
+      transform-origin: center bottom;
+      transform: translate3d(0, 0, 10px) rotateX(4deg);
+      animation: shoot3dNod 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes shoot3dNod {
+      0% {
+        transform: translate3d(0, 0, 12px) rotateX(4deg);
       }
 
       50% {
-        transform: translate(136px, 68px) scale(1.25);
-        filter: drop-shadow(0 0 10px #7fee64);
+        transform: translate3d(0, 0, 15px) rotateX(8deg) scale(1.05);
       }
+
+      100% {
+        transform: translate3d(0, 0, 11px) rotateX(2deg);
+      }
+    }
+
+    .shoot-bud-petal {
+      position: absolute;
+      bottom: 0;
+      width: 10px;
+      height: 24px;
+      border-radius: 5px 5px 2px 2px;
+      transform-style: preserve-3d;
+    }
+
+    .bud-petal-left {
+      left: 1px;
+      transform-origin: right bottom;
+      transform: rotateY(-22deg) rotateZ(-8deg);
+      background: linear-gradient(180deg, #ffffff 0%, #bbf7d0 40%, #16a34a 100%);
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.8);
+    }
+
+    .bud-petal-right {
+      right: 1px;
+      transform-origin: left bottom;
+      transform: rotateY(22deg) rotateZ(8deg);
+      background: linear-gradient(180deg, #ecfdf5 0%, #6ee7b7 40%, #10b981 100%);
+    }
+
+    .shoot-core-biolight {
+      position: absolute;
+      left: 50%;
+      top: 3px;
+      width: 5px;
+      height: 5px;
+      margin-left: -2.5px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 10px #86efac, 0 0 18px #34d399;
     }
 
     .cube-rotator.is-pressed {
@@ -540,23 +855,23 @@
 
     @keyframes sproutSpringBounce {
       0% {
-        transform: translateY(-90px) scale(1, 1);
+        transform: translateY(-75px) scale3d(1, 1, 1);
       }
 
       25% {
-        transform: translateY(-90px) scale(1.15, 0.82);
+        transform: translateY(-75px) scale3d(1.14, 0.84, 1.14);
       }
 
       50% {
-        transform: translateY(-90px) scale(0.92, 1.28);
+        transform: translateY(-75px) scale3d(0.94, 1.22, 0.94);
       }
 
       75% {
-        transform: translateY(-90px) scale(1.05, 0.96);
+        transform: translateY(-75px) scale3d(1.04, 0.97, 1.04);
       }
 
       100% {
-        transform: translateY(-90px) scale(1, 1);
+        transform: translateY(-75px) scale3d(1, 1, 1);
       }
     }
 
@@ -646,61 +961,31 @@
 
     @media (max-width: 768px) {
       .hero-cube-showcase-area {
-        height: 380px;
-        margin: 1rem auto 2rem;
+        height: 330px;
+        margin: 1.5rem auto 2rem;
       }
 
       .cube-radial-bloom {
-        width: 380px;
-        height: 380px;
-        filter: blur(40px);
+        width: 320px;
+        height: 320px;
+        filter: blur(35px);
       }
 
-      .cube-rotator {
-        width: 150px;
-        height: 150px;
+      /* Scale the entire 3D stage and sprout together seamlessly on mobile */
+      .cube-stage-3d {
+        transform: scale(0.8);
+        transform-origin: center center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-cube-showcase-area {
+        height: 300px;
+        margin: 1rem auto 1.5rem;
       }
 
-      .cube-face {
-        width: 150px;
-        height: 150px;
-      }
-
-      .face-top {
-        transform: rotateX(90deg) translateZ(75px);
-      }
-
-      .face-front {
-        transform: translateZ(75px);
-      }
-
-      .face-right {
-        transform: rotateY(90deg) translateZ(75px);
-      }
-
-      .face-left {
-        transform: rotateY(-90deg) translateZ(75px);
-      }
-
-      .face-back {
-        transform: rotateY(180deg) translateZ(75px);
-      }
-
-      .face-bottom {
-        transform: rotateX(-90deg) translateZ(75px);
-      }
-
-      .sprout-sculpture {
-        width: 140px;
-        height: 175px;
-        margin-left: -70px;
-        margin-top: -168px;
-        transform: translateY(-75px) translateZ(0);
-      }
-
-      .sprout-svg {
-        width: 140px !important;
-        height: 175px !important;
+      .cube-stage-3d {
+        transform: scale(0.72);
       }
     }
   </style>
@@ -905,99 +1190,174 @@
               <div class="cube-face face-left"></div>
               <div class="cube-face face-bottom"></div>
 
-              <!-- SPROUT (TUNAS KECIL TUMBUH TEGAK DI ATAS KUBUS) -->
+              <!-- SPROUT 3D MODEL (TUNAS HIDROPONIK 3D MESH GEOMETRI) -->
               <div class="sprout-sculpture" id="sprout-sculpture" aria-hidden="true">
-                <!-- SVG Tunas Hidroponik (Batang, Daun Kembar, Pucuk Muda & Tetes Nutrisi Bercahaya) -->
-                <svg class="sprout-svg" width="160" height="200" style="width: 160px; height: 200px; display: block;"
-                  viewBox="0 0 160 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <!-- Leaf Gradients (Modal Lime Pulse to Deep Emerald) -->
-                    <linearGradient id="leafGradLeft" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#b8ff9e" />
-                      <stop offset="35%" stop-color="#7fee64" />
-                      <stop offset="100%" stop-color="#149646" />
-                    </linearGradient>
-                    <linearGradient id="leafGradRight" x1="100%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#cbffb8" />
-                      <stop offset="40%" stop-color="#7fee64" />
-                      <stop offset="100%" stop-color="#0e803a" />
-                    </linearGradient>
-                    <linearGradient id="leafGradShoot" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#eaffea" />
-                      <stop offset="50%" stop-color="#7fee64" />
-                      <stop offset="100%" stop-color="#18b759" />
-                    </linearGradient>
-                    <linearGradient id="stemGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                      <stop offset="0%" stop-color="#0a5229" />
-                      <stop offset="45%" stop-color="#16a34a" />
-                      <stop offset="100%" stop-color="#7fee64" />
-                    </linearGradient>
-                    <radialGradient id="dewDropGrad" cx="35%" cy="35%" r="65%">
-                      <stop offset="0%" stop-color="#ffffff" />
-                      <stop offset="45%" stop-color="#ddffdc" />
-                      <stop offset="85%" stop-color="#7fee64" />
-                      <stop offset="100%" stop-color="#059669" />
-                    </radialGradient>
-                    <radialGradient id="sproutBaseGlow" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stop-color="#7fee64" stop-opacity="0.85" />
-                      <stop offset="60%" stop-color="#10b981" stop-opacity="0.4" />
-                      <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
-                    </radialGradient>
-                    <filter id="sproutSoftGlow" x="-30%" y="-30%" width="160%" height="160%">
-                      <feGaussianBlur stdDeviation="3.5" result="blur" />
-                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                    </filter>
-                  </defs>
 
-                  <!-- Base Pod Energy Aura -->
-                  <ellipse cx="80" cy="182" rx="30" ry="11" fill="url(#sproutBaseGlow)" class="sprout-root-aura" />
+                <!-- 1. Ambient Root Collar & Nutrient Water Well (Dasar Lubang Netpot) -->
+                <div class="sprout-3d-root-collar">
+                  <div class="root-water-glow"></div>
+                  <div class="root-rim-3d"></div>
+                </div>
 
-                  <!-- Sprout Main Stem (Batang Tunas Melengkung Alami) -->
-                  <path class="sprout-stem-back" d="M80 185 C79 155, 77 125, 80 92" stroke="url(#stemGrad)"
-                    stroke-width="7" stroke-linecap="round" />
-                  <path class="sprout-stem-highlight" d="M80.5 185 C79.5 155, 77.8 125, 80.5 94" stroke="#ddffdc"
-                    stroke-width="2.2" stroke-linecap="round" opacity="0.85" />
+                <!-- 2. Projected Contact Shadow on Cube Top Face -->
+                <div class="sprout-projected-shadow"></div>
 
-                  <!-- Left Leaf (Daun Kiri yang Segar) -->
-                  <g class="sprout-leaf leaf-left">
-                    <path d="M79 116 C60 114, 25 106, 20 82 C16 62, 44 65, 62 76 C74 84, 78 102, 79 116 Z"
-                      fill="url(#leafGradLeft)" filter="drop-shadow(0 6px 12px rgba(0,0,0,0.4))" />
-                    <!-- Leaf Vein Highlights -->
-                    <path d="M78 114 C65 103, 45 92, 28 82" stroke="#eaffea" stroke-width="1.8" stroke-linecap="round"
-                      opacity="0.85" />
-                    <path d="M56 100 C50 94, 46 90, 42 86" stroke="#c0ffb4" stroke-width="1.2" stroke-linecap="round"
-                      opacity="0.65" />
-                    <path d="M66 108 C64 103, 62 98, 60 93" stroke="#c0ffb4" stroke-width="1.2" stroke-linecap="round"
-                      opacity="0.65" />
-                  </g>
+                <!-- 3. TRUE 3D CYLINDRICAL STEM (Tangkai Panjang Silinder 8-Sisi Multi-Facet 3D) -->
+                <div class="sprout-cylinder-stem" id="sprout-cylinder-stem">
+                  <div class="stem-facet facet-front"></div>
+                  <div class="stem-facet facet-front-right"></div>
+                  <div class="stem-facet facet-right"></div>
+                  <div class="stem-facet facet-back-right"></div>
+                  <div class="stem-facet facet-back"></div>
+                  <div class="stem-facet facet-back-left"></div>
+                  <div class="stem-facet facet-left"></div>
+                  <div class="stem-facet facet-front-left"></div>
+                  <!-- Botanical Node Rings (Cincin Nodus Ruas Batang) -->
+                  <div class="stem-ring stem-ring-lower"></div>
+                  <div class="stem-ring stem-ring-upper"></div>
+                  <!-- Core Ambient Glow Spine -->
+                  <div class="stem-core-spine"></div>
+                </div>
 
-                  <!-- Right Leaf (Daun Kanan yang Sehat dengan Titik Embun) -->
-                  <g class="sprout-leaf leaf-right">
-                    <path d="M81 110 C100 106, 135 96, 140 72 C144 52, 116 57, 98 70 C86 79, 82 96, 81 110 Z"
-                      fill="url(#leafGradRight)" filter="drop-shadow(0 6px 12px rgba(0,0,0,0.4))" />
-                    <!-- Leaf Vein Highlights -->
-                    <path d="M82 108 C95 96, 115 84, 132 72" stroke="#eaffea" stroke-width="1.8" stroke-linecap="round"
-                      opacity="0.85" />
-                    <path d="M104 93 C110 87, 114 83, 118 79" stroke="#c4ffb8" stroke-width="1.2" stroke-linecap="round"
-                      opacity="0.65" />
-                    <path d="M94 102 C96 97, 98 92, 100 87" stroke="#c4ffb8" stroke-width="1.2" stroke-linecap="round"
-                      opacity="0.65" />
-                  </g>
+                <!-- 4. 3D LEFT LEAF ASSEMBLY (Daun Kiri 3D Bervolume - Berlipat V-Fold dengan Tulang Daun & Dua Sayap) -->
+                <div class="sprout-leaf-3d-assembly leaf-left-assembly">
+                  <!-- Tangkai Cabang (Petiole) -->
+                  <div class="leaf-petiole-branch petiole-left"></div>
 
-                  <!-- Center Budding Shoot (Pucuk Daun Muda Mungil di Tengah) -->
-                  <g class="sprout-shoot">
-                    <path d="M80 94 C76 82, 74 70, 80 56 C86 70, 84 82, 80 94 Z" fill="url(#leafGradShoot)"
-                      filter="drop-shadow(0 2px 6px rgba(0,0,0,0.3))" />
-                    <path d="M80 92 L80 60" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" opacity="0.9" />
-                  </g>
+                  <!-- Daun 3D Berlekuk (Volumetric Cupped Blade) -->
+                  <div class="leaf-3d-blade">
+                    <!-- Tulang Punggung Daun 3D (3D Midrib Ridge) -->
+                    <div class="leaf-3d-midrib"></div>
 
-                  <!-- Glowing Dewdrop (Tetesan Nutrisi Hidroponik Bercahaya di Ujung Daun) -->
-                  <g class="sprout-dewdrop" transform="translate(136, 68)">
-                    <ellipse cx="0" cy="0" rx="4.5" ry="5.5" fill="url(#dewDropGrad)" filter="url(#sproutSoftGlow)" />
-                    <ellipse cx="-1.5" cy="-2" rx="1.5" ry="1.8" fill="#ffffff" opacity="0.95" />
-                    <circle cx="1.2" cy="1.8" r="0.8" fill="#ffffff" opacity="0.8" />
-                  </g>
-                </svg>
+                    <!-- Sayap Daun Kiri (Tilted Angle -28deg) -->
+                    <div class="blade-half blade-half-left">
+                      <div class="blade-adaxial-face">
+                        <svg viewBox="0 0 45 80" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="leaf3dLAdaxial" x1="100%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stop-color="#ddffdc" />
+                              <stop offset="30%" stop-color="#7fee64" />
+                              <stop offset="70%" stop-color="#16a34a" />
+                              <stop offset="100%" stop-color="#052e16" />
+                            </linearGradient>
+                            <linearGradient id="vein3dL" x1="100%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+                              <stop offset="100%" stop-color="#a7f3d0" stop-opacity="0.3" />
+                            </linearGradient>
+                          </defs>
+                          <path d="M45 80 C40 70, 10 52, 3 32 C-2 15, 18 3, 45 0 L45 80 Z" fill="url(#leaf3dLAdaxial)" />
+                          <path d="M45 60 C34 50, 22 42, 10 36" stroke="url(#vein3dL)" stroke-width="1.6" stroke-linecap="round" />
+                          <path d="M45 42 C34 32, 22 25, 12 18" stroke="url(#vein3dL)" stroke-width="1.4" stroke-linecap="round" />
+                          <path d="M45 24 C36 17, 28 12, 20 6" stroke="url(#vein3dL)" stroke-width="1.2" stroke-linecap="round" />
+                        </svg>
+                      </div>
+                      <div class="blade-abaxial-underside"></div>
+                      <div class="blade-edge-thickness"></div>
+                    </div>
+
+                    <!-- Sayap Daun Kanan (Tilted Angle +28deg) -->
+                    <div class="blade-half blade-half-right">
+                      <div class="blade-adaxial-face">
+                        <svg viewBox="0 0 45 80" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="leaf3dLInner" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stop-color="#f0fdf4" />
+                              <stop offset="35%" stop-color="#4ade80" />
+                              <stop offset="75%" stop-color="#15803d" />
+                              <stop offset="100%" stop-color="#064e3b" />
+                            </linearGradient>
+                            <linearGradient id="vein3dLR" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+                              <stop offset="100%" stop-color="#bbf7d0" stop-opacity="0.3" />
+                            </linearGradient>
+                          </defs>
+                          <path d="M0 80 C5 70, 35 52, 42 32 C47 15, 27 3, 0 0 L0 80 Z" fill="url(#leaf3dLInner)" />
+                          <path d="M0 60 C11 50, 23 42, 35 36" stroke="url(#vein3dLR)" stroke-width="1.6" stroke-linecap="round" />
+                          <path d="M0 42 C11 32, 23 25, 33 18" stroke="url(#vein3dLR)" stroke-width="1.4" stroke-linecap="round" />
+                          <path d="M0 24 C9 17, 17 12, 25 6" stroke="url(#vein3dLR)" stroke-width="1.2" stroke-linecap="round" />
+                        </svg>
+                      </div>
+                      <div class="blade-abaxial-underside"></div>
+                      <div class="blade-edge-thickness"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 5. 3D RIGHT LEAF ASSEMBLY (Daun Kanan 3D Bervolume - Membawa Tetesan Embun 3D Sferis) -->
+                <div class="sprout-leaf-3d-assembly leaf-right-assembly">
+                  <!-- Daun 3D Berlekuk (Volumetric Cupped Blade) -->
+                  <div class="leaf-3d-blade">
+                    <!-- Tulang Punggung Daun 3D (3D Midrib Ridge) -->
+                    <div class="leaf-3d-midrib"></div>
+
+                    <!-- Sayap Daun Kiri (Tilted Angle -28deg) -->
+                    <div class="blade-half blade-half-left">
+                      <div class="blade-adaxial-face">
+                        <svg viewBox="0 0 45 80" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="leaf3dRAdaxial" x1="100%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stop-color="#e6fffa" />
+                              <stop offset="30%" stop-color="#34d399" />
+                              <stop offset="70%" stop-color="#059669" />
+                              <stop offset="100%" stop-color="#022c22" />
+                            </linearGradient>
+                            <linearGradient id="vein3dRL" x1="100%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+                              <stop offset="100%" stop-color="#a7f3d0" stop-opacity="0.3" />
+                            </linearGradient>
+                          </defs>
+                          <path d="M45 80 C40 70, 10 52, 3 32 C-2 15, 18 3, 45 0 L45 80 Z" fill="url(#leaf3dRAdaxial)" />
+                          <path d="M45 60 C34 50, 22 42, 10 36" stroke="url(#vein3dRL)" stroke-width="1.6" stroke-linecap="round" />
+                          <path d="M45 42 C34 32, 22 25, 12 18" stroke="url(#vein3dRL)" stroke-width="1.4" stroke-linecap="round" />
+                          <path d="M45 24 C36 17, 28 12, 20 6" stroke="url(#vein3dRL)" stroke-width="1.2" stroke-linecap="round" />
+                        </svg>
+                      </div>
+                      <div class="blade-abaxial-underside"></div>
+                      <div class="blade-edge-thickness"></div>
+                    </div>
+
+                    <!-- Sayap Daun Kanan (Tilted Angle +28deg) -->
+                    <div class="blade-half blade-half-right">
+                      <div class="blade-adaxial-face">
+                        <svg viewBox="0 0 45 80" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="leaf3dRInner" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stop-color="#ffffff" />
+                              <stop offset="35%" stop-color="#6ee7b7" />
+                              <stop offset="75%" stop-color="#10b981" />
+                              <stop offset="100%" stop-color="#047857" />
+                            </linearGradient>
+                            <linearGradient id="vein3dRR" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stop-color="#ffffff" />
+                              <stop offset="100%" stop-color="#bbf7d0" stop-opacity="0.4" />
+                            </linearGradient>
+                          </defs>
+                          <path d="M0 80 C5 70, 35 52, 42 32 C47 15, 27 3, 0 0 L0 80 Z" fill="url(#leaf3dRInner)" />
+                          <path d="M0 60 C11 50, 23 42, 35 36" stroke="url(#vein3dRR)" stroke-width="1.6" stroke-linecap="round" />
+                          <path d="M0 42 C11 32, 23 25, 33 18" stroke="url(#vein3dRR)" stroke-width="1.4" stroke-linecap="round" />
+                          <path d="M0 24 C9 17, 17 12, 25 6" stroke="url(#vein3dRR)" stroke-width="1.2" stroke-linecap="round" />
+                        </svg>
+                      </div>
+                      <div class="blade-abaxial-underside"></div>
+                      <div class="blade-edge-thickness"></div>
+                    </div>
+
+                    <!-- 3D Spherical Liquid Dewdrop Orb (Tetes Embun 3D) -->
+                    <div class="dewdrop-3d-sphere" title="Tetesan Embun Nutrisi Hidroponik">
+                      <div class="dewdrop-sphere-body"></div>
+                      <div class="dewdrop-pin-specular"></div>
+                      <div class="dewdrop-caustic-ring"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 6. 3D APICAL BUD SHOOT (Pucuk Tunas 3D di Puncak Tangkai) -->
+                <div class="sprout-3d-shoot-assembly">
+                  <div class="shoot-bud-petal bud-petal-left"></div>
+                  <div class="shoot-bud-petal bud-petal-right"></div>
+                  <div class="shoot-core-biolight"></div>
+                </div>
+
               </div>
 
             </div>
@@ -1911,8 +2271,10 @@
 
   <!-- Skrip JS -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="/js/three.min.js"></script>
+  <script src="/js/sprout3d.js?v=20261012j"></script>
   <script src="/js/chart.js?v=20261012b"></script>
-  <script src="/js/app.js?v=20261012b"></script>
+  <script src="/js/app.js?v=20261012j"></script>
 </body>
 
 </html>

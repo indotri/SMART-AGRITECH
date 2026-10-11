@@ -13,8 +13,18 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.post('/api/save-logo-png', (req, res) => {
+  try {
+    const base64Data = req.body.image.replace(/^data:image\/png;base64,/, '');
+    fs.writeFileSync(path.join(__dirname, 'public/images/logo.png'), base64Data, 'base64');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // State Store
 let state = {

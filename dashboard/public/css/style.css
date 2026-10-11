@@ -608,7 +608,7 @@ body {
   justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 2.25rem;
+  margin-bottom: 4.5rem;
 }
 
 .btn-modal-lime-pill {
@@ -669,8 +669,9 @@ body {
   position: relative;
   width: 100%;
   max-width: 780px;
-  height: 380px;
-  margin: 0.75rem auto 2.5rem;
+  height: 400px;
+  margin: 2.25rem auto 3rem;
+  padding-top: 1.25rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1028,32 +1029,52 @@ body {
 /* ==========================================================================
    SPROUT SCULPTURE (TUNAS HIDROPONIK TUMBUH DI ATAS KUBUS)
    ========================================================================== */
+/* ==========================================================================
+   3D LIVING HYDROPONIC SPROUT SCULPTURE (GENUINE 3D MULTI-PLANAR DEPTH)
+   ========================================================================== */
 .sprout-sculpture {
   position: absolute;
-  width: 160px;
-  height: 200px;
   left: 50%;
   top: 50%;
-  margin-left: -80px;
-  margin-top: -192px;
-  transform-origin: 80px 185px;
-  transform: translateY(-90px) translateZ(0);
+  width: 140px;
+  height: 150px;
+  margin-left: -70px;
+  margin-top: -140px;
+  transform-origin: 70px 140px;
+  transform: translateY(-75px) translateZ(0);
   transform-style: preserve-3d;
   pointer-events: none;
   z-index: 10;
   will-change: transform;
 }
 
-.sprout-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+/* 1. Base Root Collar & Nutrient Well */
+.sprout-3d-root-collar {
+  position: absolute;
+  left: 50%;
+  top: 136px;
+  transform: translateX(-50%) rotateX(90deg);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  transform-style: preserve-3d;
 }
 
-/* Organic Ambient Motion for Sprout */
-.sprout-root-aura {
+.root-water-glow {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(127, 238, 100, 0.85) 0%, rgba(16, 185, 129, 0.35) 60%, transparent 100%);
+  filter: blur(6px);
   animation: rootAuraBreath 3s ease-in-out infinite alternate;
+}
+
+.root-rim-3d {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 2px solid rgba(134, 239, 172, 0.7);
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.6), inset 0 0 6px rgba(16, 185, 129, 0.5);
 }
 
 @keyframes rootAuraBreath {
@@ -1061,49 +1082,347 @@ body {
   100% { transform: scale(1.08); opacity: 0.95; }
 }
 
-.sprout-leaf.leaf-left {
-  transform-origin: 79px 116px;
-  animation: leafSwayLeft 5.5s ease-in-out infinite alternate;
+/* 2. Projected Contact Shadow on Cube Top Face */
+.sprout-projected-shadow {
+  position: absolute;
+  left: 50%;
+  top: 138px;
+  width: 60px;
+  height: 22px;
+  margin-left: -30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  filter: blur(5px);
+  transform: rotateX(90deg) translateZ(-2px);
+  pointer-events: none;
 }
 
-@keyframes leafSwayLeft {
-  0% { transform: rotate(0deg); }
-  50% { transform: rotate(-4.5deg); }
-  100% { transform: rotate(1deg); }
+/* 3. TRUE 3D CYLINDRICAL STEM (ELONGATED 70PX 8-FACETED CYLINDER) */
+.sprout-cylinder-stem {
+  position: absolute;
+  left: 50%;
+  top: 66px;
+  width: 14px;
+  height: 70px;
+  margin-left: -7px;
+  transform-origin: center bottom;
+  transform: translate3d(0, 0, 8px) rotateX(4deg) rotateZ(-1deg);
+  transform-style: preserve-3d;
+  animation: stemSubtleSway 6s ease-in-out infinite alternate;
 }
 
-.sprout-leaf.leaf-right {
-  transform-origin: 81px 110px;
-  animation: leafSwayRight 6s ease-in-out infinite alternate;
+@keyframes stemSubtleSway {
+  0% { transform: translate3d(0, 0, 8px) rotateX(4deg) rotateZ(-1deg); }
+  50% { transform: translate3d(0, 0, 9px) rotateX(6deg) rotateZ(1deg); }
+  100% { transform: translate3d(0, 0, 8px) rotateX(3deg) rotateZ(-2deg); }
 }
 
-@keyframes leafSwayRight {
-  0% { transform: rotate(0deg); }
-  50% { transform: rotate(5deg); }
-  100% { transform: rotate(-1.5deg); }
+.stem-facet {
+  position: absolute;
+  top: 0;
+  left: 4px;
+  width: 6px;
+  height: 100%;
+  border-radius: 2px;
+  backface-visibility: visible;
 }
 
-.sprout-shoot {
-  transform-origin: 80px 94px;
-  animation: shootNod 4s ease-in-out infinite alternate;
+/* 8 Facets in cylindrical layout around Y-axis (radius ~7px) */
+.facet-front {
+  transform: rotateY(0deg) translateZ(7px);
+  background: linear-gradient(180deg, #bbf7d0 0%, #34d399 35%, #16a34a 75%, #14532d 100%);
+  box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.6);
 }
 
-@keyframes shootNod {
-  0% { transform: rotate(0deg); }
-  50% { transform: rotate(2deg) scale(1.03); }
-  100% { transform: rotate(-2deg); }
+.facet-front-right {
+  transform: rotateY(45deg) translateZ(7px);
+  background: linear-gradient(180deg, #86efac 0%, #22c55e 40%, #15803d 80%, #064e3b 100%);
 }
 
-.sprout-dewdrop {
-  animation: dewdropTwinkle 3s ease-in-out infinite alternate;
+.facet-right {
+  transform: rotateY(90deg) translateZ(7px);
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 45%, #14532d 85%, #052e16 100%);
 }
 
-@keyframes dewdropTwinkle {
-  0%, 100% { transform: translate(136px, 68px) scale(1); filter: drop-shadow(0 0 4px #7fee64); }
-  50% { transform: translate(136px, 68px) scale(1.25); filter: drop-shadow(0 0 10px #7fee64); }
+.facet-back-right {
+  transform: rotateY(135deg) translateZ(7px);
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 50%, #064e3b 90%, #022c22 100%);
 }
 
-/* HIGH-ENERGY CLICK / SPRING ANIMATIONS (Modal Motion Philosophy) */
+.facet-back {
+  transform: rotateY(180deg) translateZ(7px);
+  background: linear-gradient(180deg, #16a34a 0%, #14532d 50%, #052e16 90%, #022c22 100%);
+}
+
+.facet-back-left {
+  transform: rotateY(225deg) translateZ(7px);
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 50%, #064e3b 90%, #052e16 100%);
+}
+
+.facet-left {
+  transform: rotateY(270deg) translateZ(7px);
+  background: linear-gradient(180deg, #6ee7b7 0%, #16a34a 45%, #14532d 85%, #064e3b 100%);
+}
+
+.facet-front-left {
+  transform: rotateY(315deg) translateZ(7px);
+  background: linear-gradient(180deg, #ddffdc 0%, #4ade80 35%, #16a34a 75%, #14532d 100%);
+  box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.7);
+}
+
+.stem-core-spine {
+  position: absolute;
+  inset: 0;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #064e3b 0%, #16a34a 25%, #86efac 50%, #22c55e 75%, #052e16 100%);
+  box-shadow: 0 0 10px rgba(127, 238, 100, 0.45);
+}
+
+.stem-ring {
+  position: absolute;
+  left: -2px;
+  width: 18px;
+  height: 6px;
+  border-radius: 50%;
+  transform: rotateX(85deg);
+  background: radial-gradient(circle, #ecfdf5 0%, #34d399 50%, #064e3b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 6px rgba(134, 239, 172, 0.6);
+}
+
+.stem-ring-lower {
+  top: 72%;
+}
+
+.stem-ring-upper {
+  top: 38%;
+}
+
+/* 4. TRUE 3D LEAF ASSEMBLIES WITH V-FOLD VOLUMETRIC WINGS */
+.sprout-leaf-3d-assembly {
+  position: absolute;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* 4. TRUE 3D LEAF ASSEMBLIES WITH V-FOLD VOLUMETRIC WINGS */
+.sprout-leaf-3d-assembly {
+  position: absolute;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Left Leaf Assembly (Branches Outward-Left-Forward) */
+.sprout-leaf-3d-assembly.leaf-left-assembly {
+  left: 50%;
+  top: -2px;
+  width: 90px;
+  height: 68px;
+  margin-left: -45px;
+  transform-origin: 45px 68px;
+  transform: translate3d(0, 0, 16px) rotateZ(-58deg) rotateY(-24deg) rotateX(16deg);
+  animation: leaf3dLeftSway 5.5s ease-in-out infinite alternate;
+}
+
+@keyframes leaf3dLeftSway {
+  0% { transform: translate3d(0, 0, 16px) rotateZ(-58deg) rotateY(-24deg) rotateX(16deg); }
+  50% { transform: translate3d(0, 0, 20px) rotateZ(-63deg) rotateY(-28deg) rotateX(20deg); }
+  100% { transform: translate3d(0, 0, 14px) rotateZ(-54deg) rotateY(-20deg) rotateX(12deg); }
+}
+
+/* Right Leaf Assembly (Branches Outward-Right-Backward) */
+.sprout-leaf-3d-assembly.leaf-right-assembly {
+  left: 50%;
+  top: -2px;
+  width: 90px;
+  height: 68px;
+  margin-left: -45px;
+  transform-origin: 45px 68px;
+  transform: translate3d(0, 0, 10px) rotateZ(56deg) rotateY(26deg) rotateX(-12deg);
+  animation: leaf3dRightSway 6s ease-in-out infinite alternate;
+}
+
+@keyframes leaf3dRightSway {
+  0% { transform: translate3d(0, 0, 10px) rotateZ(56deg) rotateY(26deg) rotateX(-12deg); }
+  50% { transform: translate3d(0, 0, 13px) rotateZ(60deg) rotateY(30deg) rotateX(-8deg); }
+  100% { transform: translate3d(0, 0, 8px) rotateZ(52deg) rotateY(22deg) rotateX(-15deg); }
+}
+
+/* 3D Blade Container */
+.leaf-3d-blade {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+/* 3D Midrib Spine (Extruded Volumetric Spine Ridge) */
+.leaf-3d-midrib {
+  position: absolute;
+  left: 44px;
+  top: 0;
+  width: 3px;
+  height: 66px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #ffffff 0%, #bbf7d0 40%, #22c55e 80%, #15803d 100%);
+  transform: translateZ(3px);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  z-index: 5;
+}
+
+/* Blade Halves forming 3D V-Fold Cup */
+.blade-half {
+  position: absolute;
+  top: 0;
+  width: 45px;
+  height: 68px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.blade-half-left {
+  left: 0;
+  transform-origin: right center;
+  transform: rotateY(-28deg);
+}
+
+.blade-half-right {
+  left: 45px;
+  transform-origin: left center;
+  transform: rotateY(28deg);
+}
+
+.blade-adaxial-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: visible;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+}
+
+.blade-adaxial-face svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.blade-abaxial-underside {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% 50% 20% 20%;
+  background: linear-gradient(180deg, #15803d 0%, #064e3b 80%, #022c22 100%);
+  transform: translateZ(-2px);
+  opacity: 0.85;
+}
+
+.blade-edge-thickness {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50% 50% 20% 20%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+}
+
+/* 3D Dewdrop Sphere on Leaf Fold */
+.dewdrop-3d-sphere {
+  position: absolute;
+  left: 45px;
+  top: 24px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  transform-style: preserve-3d;
+  transform: translateZ(8px);
+  animation: dewdropHoverPulse 3s ease-in-out infinite alternate;
+  z-index: 10;
+}
+
+@keyframes dewdropHoverPulse {
+  0% { transform: translateZ(8px) scale(0.95); }
+  100% { transform: translateZ(10px) scale(1.12); }
+}
+
+.dewdrop-sphere-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #bbf7d0 35%, #34d399 70%, #059669 100%);
+  box-shadow: 0 0 12px #34d399, 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.dewdrop-pin-specular {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 3px #ffffff;
+}
+
+.dewdrop-caustic-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  opacity: 0.7;
+}
+
+/* 5. 3D APICAL BUD SHOOT */
+.sprout-3d-shoot-assembly {
+  position: absolute;
+  left: 50%;
+  top: 44px;
+  width: 18px;
+  height: 24px;
+  margin-left: -9px;
+  transform-style: preserve-3d;
+  transform-origin: center bottom;
+  transform: translate3d(0, 0, 12px) rotateX(4deg);
+  animation: shoot3dNod 4s ease-in-out infinite alternate;
+}
+
+@keyframes shoot3dNod {
+  0% { transform: translate3d(0, 0, 16px) rotateX(4deg); }
+  50% { transform: translate3d(0, 0, 19px) rotateX(8deg) scale(1.05); }
+  100% { transform: translate3d(0, 0, 15px) rotateX(2deg); }
+}
+
+.shoot-bud-petal {
+  position: absolute;
+  bottom: 0;
+  width: 12px;
+  height: 28px;
+  border-radius: 6px 6px 2px 2px;
+  transform-style: preserve-3d;
+}
+
+.bud-petal-left {
+  left: 1px;
+  transform-origin: right bottom;
+  transform: rotateY(-22deg) rotateZ(-8deg);
+  background: linear-gradient(180deg, #ffffff 0%, #bbf7d0 40%, #16a34a 100%);
+  box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.bud-petal-right {
+  right: 1px;
+  transform-origin: left bottom;
+  transform: rotateY(22deg) rotateZ(8deg);
+  background: linear-gradient(180deg, #ecfdf5 0%, #6ee7b7 40%, #10b981 100%);
+}
+
+.shoot-core-biolight {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 10px #86efac, 0 0 18px #34d399;
+}
+
 .cube-rotator.is-pressed {
   transform: scale3d(1.06, 0.86, 1.06) !important;
   transition: transform 0.08s ease !important;
@@ -1114,11 +1433,11 @@ body {
 }
 
 @keyframes sproutSpringBounce {
-  0% { transform: translateY(-90px) scale(1, 1); }
-  25% { transform: translateY(-90px) scale(1.15, 0.82); }
-  50% { transform: translateY(-90px) scale(0.92, 1.28); }
-  75% { transform: translateY(-90px) scale(1.05, 0.96); }
-  100% { transform: translateY(-90px) scale(1, 1); }
+  0% { transform: translateY(-75px) scale3d(1, 1, 1); }
+  25% { transform: translateY(-75px) scale3d(1.14, 0.84, 1.14); }
+  50% { transform: translateY(-75px) scale3d(0.94, 1.22, 0.94); }
+  75% { transform: translateY(-75px) scale3d(1.04, 0.97, 1.04); }
+  100% { transform: translateY(-75px) scale3d(1, 1, 1); }
 }
 
 /* Dynamic Floating Particles Erupted on Click */
@@ -1207,34 +1526,27 @@ body {
 
 @media (max-width: 768px) {
   .hero-cube-showcase-area {
-    height: 380px;
-    margin: 1rem auto 2rem;
+    height: 330px;
+    margin: 1.5rem auto 2rem;
   }
   .cube-radial-bloom {
-    width: 380px;
-    height: 380px;
-    filter: blur(40px);
+    width: 320px;
+    height: 320px;
+    filter: blur(35px);
   }
-  .cube-rotator {
-    width: 150px;
-    height: 150px;
+  .cube-stage-3d {
+    transform: scale(0.8);
+    transform-origin: center center;
   }
-  .cube-face {
-    width: 150px;
-    height: 150px;
+}
+
+@media (max-width: 480px) {
+  .hero-cube-showcase-area {
+    height: 300px;
+    margin: 1rem auto 1.5rem;
   }
-  .face-top { transform: rotateX(90deg) translateZ(75px); }
-  .face-front { transform: translateZ(75px); }
-  .face-right { transform: rotateY(90deg) translateZ(75px); }
-  .face-left { transform: rotateY(-90deg) translateZ(75px); }
-  .face-back { transform: rotateY(180deg) translateZ(75px); }
-  .face-bottom { transform: rotateX(-90deg) translateZ(75px); }
-  .sprout-sculpture {
-    width: 140px;
-    height: 175px;
-    margin-left: -70px;
-    margin-top: -168px;
-    transform: translateY(-75px) translateZ(0);
+  .cube-stage-3d {
+    transform: scale(0.72);
   }
 }
 
@@ -2117,4 +2429,154 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+/* ==========================================================================
+   GLOBAL MOBILE RESPONSIVE SUITE (< 768px & < 480px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+  }
+
+  .main-viewport {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .hero-modal-container {
+    padding: 0 0.5rem;
+  }
+
+  .hero-modal-title {
+    font-size: clamp(1.85rem, 6.5vw, 2.75rem);
+    line-height: 1.15;
+  }
+
+  .hero-modal-subhead {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 1.25rem auto 2rem;
+    padding: 0 0.5rem;
+  }
+
+  .hero-modal-cta-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 3.75rem;
+    width: 100%;
+  }
+
+  .cube-stage-3d {
+    transform: scale(0.72) !important;
+  }
+
+  .btn-modal-lime-pill,
+  .btn-modal-ghost-outline {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .modal-metrics-proof-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding: 1.25rem 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .proof-metric-number {
+    font-size: 1.5rem;
+  }
+
+  .stat-cards-row-4 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .view-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .view-headline {
+    font-size: 1.45rem;
+  }
+
+  .panel-header-line {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .view-mode-pill-tabs {
+    align-self: flex-start;
+  }
+
+  .mesh-table-wrapper {
+    padding: 1rem 0.75rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mesh-table th,
+  .mesh-table td {
+    padding: 0.75rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  .terminal-window-inner {
+    padding: 1rem;
+  }
+
+  .figma-navbar {
+    height: 58px;
+  }
+
+  .navbar-container {
+    padding: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .nav-tab-list {
+    display: none;
+  }
+
+  .brand-main-title {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-modal-title {
+    font-size: 1.7rem;
+  }
+
+  .modal-metrics-proof-strip {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .pill-status-dot span:not(.dot-indicator) {
+    display: none;
+  }
+
+  .pill-status-dot {
+    padding: 0.35rem;
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+  }
+
+  .toggle-switch-compact {
+    padding: 0.3rem 0.5rem;
+  }
+
+  .toggle-switch-compact span:not(#theme-icon) {
+    font-size: 0.68rem;
+  }
 }

@@ -614,6 +614,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!cubeRotator || !heroArea) return;
 
+    // Inisialisasi Tunas Hidroponik 3D WebGL (Three.js)
+    if (window.Sprout3D && typeof window.Sprout3D.init === 'function') {
+      window.Sprout3D.init();
+    }
+
     // Koordinat Rotasi Dasar (Isometric Perspective)
     const baseRotX = -24;
     const baseRotY = -36;
@@ -678,6 +683,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const bloomX = mouseNormX * 35;
         const bloomY = mouseNormY * 35;
         radialBloom.style.transform = `translate(${bloomX.toFixed(1)}px, ${bloomY.toFixed(1)}px)`;
+      }
+
+      // Sinkronisasi Orientasi Tunas 3D WebGL (Three.js)
+      if (window.Sprout3D && window.Sprout3D.isReady) {
+        window.Sprout3D.updateTransform(currentRotX, currentRotY, bobY);
       }
 
       requestAnimationFrame(renderCubeFrame);
@@ -769,6 +779,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Animasi Reaksi Tunas (Sprout Springs Up & Blooms)
+      if (window.Sprout3D && window.Sprout3D.isReady) {
+        window.Sprout3D.triggerBounce();
+      }
       if (sproutSculpture) {
         sproutSculpture.classList.remove('bounce-trigger');
         void sproutSculpture.offsetWidth;
