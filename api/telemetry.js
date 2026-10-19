@@ -18,11 +18,33 @@ globalThis.__telemetryState = globalThis.__telemetryState || {
   thresholds: {
     soilSafeLimit: 50,
     soilCriticalLimit: 35,
-    airHumDryLimit: 60.0
+    airHumDryLimit: 60.0,
+    tempMaxLimit: 31.0
   },
   lastHardwarePing: null,
   history: []
 };
+
+function evaluateIrrigation(soilMoisture, airHumidity, airTemp, thresholds) {
+  const {
+    soilSafeLimit = 50,
+    soilCriticalLimit = 35,
+    airHumDryLimit = 60.0,
+    tempMaxLimit = 31.0
+  } = thresholds || {};
+
+  let trigger = false;
+  if (soilMoisture < soilSafeLimit) {
+    if (soilMoisture < soilCriticalLimit) {
+      trigger = true; // Kondisi 1: Tanah kritis kering
+    } else if (airHumidity < airHumDryLimit) {
+      trigger = true; // Kondisi 2: Udara kering
+    } else if (airTemp !== undefined && tempMaxLimit !== undefined && airTemp >= tempMaxLimit) {
+      trigger = true; // Kondisi 3: Suhu melampaui batas panas
+    }
+  }
+  return trigger;
+}
 
 const MAX_HISTORY = 40;
 
@@ -58,11 +80,31 @@ module.exports = (req, res) => {
       } else if (body.action === 'set_mode') {
         state.mode = body.mode === 'manual' ? 'manual' : 'auto';
         if (state.mode === 'auto') {
-          state.pumpTarget = false;
+          state.telemetry.pumpStatus = evaluateIrrigation(
+            state.telemetry.soilMoisture,
+            state.telemetry.airHumidity,
+            state.telemetry.airTemp,
+            state.thresholds
+          );
+          state.pumpTarget = state.telemetry.pumpStatus;
         }
       } else if (body.action === 'update_thresholds') {
         if (body.thresholds) {
-          state.thresholds = { ...state.thresholds, ...body.thresholds };
+          const t = body.thresholds;
+          if (t.soilSafeLimit !== undefined) state.thresholds.soilSafeLimit = Number(t.soilSafeLimit);
+          if (t.soilCriticalLimit !== undefined) state.thresholds.soilCriticalLimit = Number(t.soilCriticalLimit);
+          if (t.airHumDryLimit !== undefined) state.thresholds.airHumDryLimit = Number(t.airHumDryLimit);
+          if (t.tempMaxLimit !== undefined) state.thresholds.tempMaxLimit = Number(t.tempMaxLimit);
+
+          if (state.mode === 'auto') {
+            state.telemetry.pumpStatus = evaluateIrrigation(
+              state.telemetry.soilMoisture,
+              state.telemetry.airHumidity,
+              state.telemetry.airTemp,
+              state.thresholds
+            );
+            state.pumpTarget = state.telemetry.pumpStatus;
+          }
         }
       }
 
@@ -70,6 +112,7 @@ module.exports = (req, res) => {
         success: true,
         mode: state.mode,
         pumpTarget: state.pumpTarget,
+        pumpStatus: state.telemetry.pumpStatus,
         thresholds: state.thresholds
       });
     }
@@ -86,11 +129,19 @@ module.exports = (req, res) => {
       const batVolt = Number(body.batteryVoltage) || 12.6;
       const batPct = Number(body.batteryPercent) || 85;
 
+      let evaluatedPump = pump;
+      if (state.mode === 'auto') {
+        evaluatedPump = evaluateIrrigation(soil, hum, temp, state.thresholds);
+        state.pumpTarget = evaluatedPump;
+      } else {
+        evaluatedPump = state.pumpTarget;
+      }
+
       state.telemetry = {
         soilMoisture: soil,
         airTemp: temp,
         airHumidity: hum,
-        pumpStatus: state.mode === 'manual' ? state.pumpTarget : pump,
+        pumpStatus: evaluatedPump,
         batteryVoltage: batVolt,
         batteryPercent: batPct,
         solarVoltage: 18.2,
@@ -107,11 +158,12 @@ module.exports = (req, res) => {
         state.history.shift();
       }
 
-      // Balas ke ESP32 dengan instruksi mode dan target pompa
+      // Balas ke ESP32 dengan instruksi mode, target pompa, dan thresholds
       return res.status(200).json({
         success: true,
         mode: state.mode,
-        pumpTarget: state.pumpTarget
+        pumpTarget: evaluatedPump,
+        thresholds: state.thresholds
       });
     }
 

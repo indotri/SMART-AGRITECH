@@ -43,7 +43,8 @@ let state = {
   thresholds: {
     soilSafeLimit: 50,       // >= 50%: Safe (Pump OFF)
     soilCriticalLimit: 35,   // < 35%: Critical (Pump ON)
-    airHumDryLimit: 60.0     // < 60%: Dry air condition
+    airHumDryLimit: 60.0,    // < 60%: Dry air condition
+    tempMaxLimit: 31.0       // >= 31°C: High temperature cooling trigger
   },
   simulationEnabled: true,
   lastHardwarePing: null
@@ -82,18 +83,26 @@ for (let i = MAX_HISTORY; i >= 0; i--) {
 }
 
 addLog('SYS', 'INFO', 'Hydroponic IoT Gateway initialized on port ' + PORT);
-addLog('CORE', 'READY', 'Loaded control thresholds: Safe=50%, Critical=35%, AirDry=60%');
+addLog('CORE', 'READY', 'Loaded control thresholds: Safe=50%, Critical=35%, AirDry=60%, TempMax=31°C');
 addLog('TELEMETRY', 'SIM', 'Virtual telemetry simulator active (standing by for ESP32 packets)');
 
-// Logic evaluation function (identical to ESP32 main.cpp)
-function evaluateIrrigation(soilMoisture, airHumidity) {
+// Logic evaluation function (supports dynamic thresholds for soil, humidity, and temperature)
+function evaluateIrrigation(soilMoisture, airHumidity, airTemp) {
   if (state.mode === 'manual') return false;
 
+  const { soilSafeLimit, soilCriticalLimit, airHumDryLimit, tempMaxLimit } = state.thresholds;
   let trigger = false;
-  if (soilMoisture < state.thresholds.soilSafeLimit) {
-    if (soilMoisture < state.thresholds.soilCriticalLimit) {
+
+  // Jika kelembapan tanah masih di bawah batas aman
+  if (soilMoisture < soilSafeLimit) {
+    if (soilMoisture < soilCriticalLimit) {
+      // Kondisi 1: Tanah kritis kering (< soilCriticalLimit), wajib siram
       trigger = true;
-    } else if (airHumidity < state.thresholds.airHumDryLimit) {
+    } else if (airHumidity < airHumDryLimit) {
+      // Kondisi 2: Tanah mulai mengering DAN udara kering (< airHumDryLimit)
+      trigger = true;
+    } else if (airTemp !== undefined && tempMaxLimit !== undefined && airTemp >= tempMaxLimit) {
+      // Kondisi 3: Suhu lingkungan melampaui batas maksimal (>= tempMaxLimit)
       trigger = true;
     }
   }
@@ -167,7 +176,7 @@ app.post('/api/telemetry', (req, res) => {
     // In manual mode, Web state is the single source of truth!
     evaluatedPump = !!state.telemetry.pumpStatus;
   } else {
-    evaluatedPump = evaluateIrrigation(soilMoisture, airHumidity);
+    evaluatedPump = evaluateIrrigation(Number(soilMoisture), Number(airHumidity), Number(airTemp));
   }
 
   const batVolt = batteryVoltage !== undefined ? Number(batteryVoltage) : state.telemetry.batteryVoltage;
@@ -223,7 +232,7 @@ app.post('/api/pump', (req, res) => {
 
   if (action === 'resume_auto' || mode === 'auto') {
     state.mode = 'auto';
-    state.telemetry.pumpStatus = evaluateIrrigation(state.telemetry.soilMoisture, state.telemetry.airHumidity);
+    state.telemetry.pumpStatus = evaluateIrrigation(state.telemetry.soilMoisture, state.telemetry.airHumidity, state.telemetry.airTemp);
     addLog('USER', 'OK', 'Mode Otomatis dipulihkan (AUTONOMOUS loop aktif).');
   } else {
     if (mode) {
@@ -248,15 +257,21 @@ app.post('/api/pump', (req, res) => {
 
 // Dynamic Threshold Update Endpoint
 app.post('/api/thresholds', (req, res) => {
-  const { soilSafeLimit, soilCriticalLimit, airHumDryLimit } = req.body;
+  const { soilSafeLimit, soilCriticalLimit, airHumDryLimit, tempMaxLimit } = req.body;
   if (soilSafeLimit !== undefined) state.thresholds.soilSafeLimit = Number(soilSafeLimit);
   if (soilCriticalLimit !== undefined) state.thresholds.soilCriticalLimit = Number(soilCriticalLimit);
   if (airHumDryLimit !== undefined) state.thresholds.airHumDryLimit = Number(airHumDryLimit);
+  if (tempMaxLimit !== undefined) state.thresholds.tempMaxLimit = Number(tempMaxLimit);
 
-  addLog('CONFIG', 'UPDATE', `Thresholds reconfigured: Safe=${state.thresholds.soilSafeLimit}% Crit=${state.thresholds.soilCriticalLimit}% AirDry=${state.thresholds.airHumDryLimit}%`);
+  if (state.mode === 'auto') {
+    state.telemetry.pumpStatus = evaluateIrrigation(state.telemetry.soilMoisture, state.telemetry.airHumidity, state.telemetry.airTemp);
+  }
+
+  addLog('CONFIG', 'UPDATE', `Thresholds reconfigured: Tanah Aman=${state.thresholds.soilSafeLimit}% Kritis=${state.thresholds.soilCriticalLimit}% Udara=${state.thresholds.airHumDryLimit}% Suhu=${state.thresholds.tempMaxLimit}°C`);
 
   io.emit('thresholds_update', state.thresholds);
-  res.json({ success: true, thresholds: state.thresholds });
+  io.emit('state_update', { mode: state.mode, telemetry: state.telemetry });
+  res.json({ success: true, thresholds: state.thresholds, pumpStatus: state.telemetry.pumpStatus });
 });
 
 // Toggle Simulator
@@ -277,7 +292,7 @@ io.on('connection', (socket) => {
 
   socket.on('resume_auto', () => {
     state.mode = 'auto';
-    state.telemetry.pumpStatus = evaluateIrrigation(state.telemetry.soilMoisture, state.telemetry.airHumidity);
+    state.telemetry.pumpStatus = evaluateIrrigation(state.telemetry.soilMoisture, state.telemetry.airHumidity, state.telemetry.airTemp);
     addLog('SOCKET', 'OK', 'Mode Otomatis dipulihkan via Web');
     io.emit('state_update', { mode: state.mode, telemetry: state.telemetry });
   });
@@ -292,16 +307,24 @@ io.on('connection', (socket) => {
   socket.on('set_mode', (mode) => {
     state.mode = mode === 'manual' ? 'manual' : 'auto';
     if (state.mode === 'auto') {
-      state.telemetry.pumpStatus = evaluateIrrigation(state.telemetry.soilMoisture, state.telemetry.airHumidity);
+      state.telemetry.pumpStatus = evaluateIrrigation(state.telemetry.soilMoisture, state.telemetry.airHumidity, state.telemetry.airTemp);
     }
     addLog('SOCKET', 'ACTION', `Socket mode change -> ${state.mode.toUpperCase()}`);
     io.emit('state_update', { mode: state.mode, telemetry: state.telemetry });
   });
 
   socket.on('update_thresholds', (newThresholds) => {
-    Object.assign(state.thresholds, newThresholds);
-    addLog('SOCKET', 'CONFIG', `Thresholds updated via socket`);
+    if (newThresholds.soilSafeLimit !== undefined) state.thresholds.soilSafeLimit = Number(newThresholds.soilSafeLimit);
+    if (newThresholds.soilCriticalLimit !== undefined) state.thresholds.soilCriticalLimit = Number(newThresholds.soilCriticalLimit);
+    if (newThresholds.airHumDryLimit !== undefined) state.thresholds.airHumDryLimit = Number(newThresholds.airHumDryLimit);
+    if (newThresholds.tempMaxLimit !== undefined) state.thresholds.tempMaxLimit = Number(newThresholds.tempMaxLimit);
+
+    if (state.mode === 'auto') {
+      state.telemetry.pumpStatus = evaluateIrrigation(state.telemetry.soilMoisture, state.telemetry.airHumidity, state.telemetry.airTemp);
+    }
+    addLog('SOCKET', 'CONFIG', `Thresholds updated via web: Tanah Aman=${state.thresholds.soilSafeLimit}% Kritis=${state.thresholds.soilCriticalLimit}% Udara=${state.thresholds.airHumDryLimit}% Suhu=${state.thresholds.tempMaxLimit}°C`);
     io.emit('thresholds_update', state.thresholds);
+    io.emit('state_update', { mode: state.mode, telemetry: state.telemetry });
   });
 });
 
@@ -329,7 +352,7 @@ setInterval(() => {
   if (state.mode === 'manual') {
     nextPump = state.telemetry.pumpStatus;
   } else {
-    nextPump = evaluateIrrigation(currentSoil, currentHum);
+    nextPump = evaluateIrrigation(currentSoil, currentHum, currentTemp);
   }
 
   // Solar & Battery dynamic simulation

@@ -221,6 +221,10 @@ document.addEventListener('DOMContentLoaded', () => {
         pumpVisualRing.style.boxShadow = 'none';
       }
     }
+
+    if (typeof evaluateLiveThresholds === 'function') {
+      evaluateLiveThresholds();
+    }
   }
 
   function addTerminalLog(log) {
@@ -262,6 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) return;
       const data = await res.json();
       if (!data.success) return;
+
+      if (data.thresholds && typeof updateThresholdsUI === 'function') {
+        updateThresholdsUI(data.thresholds);
+      }
 
       if (serverPill) {
         serverPill.innerHTML = `
@@ -370,9 +378,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.state && data.state.telemetry) {
         updateTelemetryUI(data.state.telemetry);
       }
+      if (data.state && data.state.thresholds && typeof updateThresholdsUI === 'function') {
+        updateThresholdsUI(data.state.thresholds);
+      }
       if (data.logs && Array.isArray(data.logs)) {
         terminalStream.innerHTML = '';
         data.logs.forEach(l => addTerminalLog(l));
+      }
+    });
+
+    socket.on('thresholds_update', (thresh) => {
+      if (typeof updateThresholdsUI === 'function') {
+        updateThresholdsUI(thresh);
       }
     });
 
@@ -507,6 +524,371 @@ document.addEventListener('DOMContentLoaded', () => {
         message: `Simulator telemetri: ${simActive ? 'DIAKTIFKAN' : 'DIJEDA'}`
       });
     });
+  }
+
+  // ==========================================================================
+  // PENGATURAN AMBANG BATAS OTOMASI (Smart Auto-Thresholds Studio)
+  // ==========================================================================
+  let currentThresholds = {
+    soilSafeLimit: 50,
+    soilCriticalLimit: 35,
+    airHumDryLimit: 60.0,
+    tempMaxLimit: 31.0
+  };
+
+  const CROP_PRESETS = {
+    default: { soilSafeLimit: 50, soilCriticalLimit: 35, airHumDryLimit: 60.0, tempMaxLimit: 31.0 },
+    leafy: { soilSafeLimit: 65, soilCriticalLimit: 40, airHumDryLimit: 65.0, tempMaxLimit: 29.0 },
+    fruiting: { soilSafeLimit: 55, soilCriticalLimit: 35, airHumDryLimit: 55.0, tempMaxLimit: 31.0 },
+    seedling: { soilSafeLimit: 70, soilCriticalLimit: 45, airHumDryLimit: 70.0, tempMaxLimit: 28.0 }
+  };
+
+  // Slider & Number Input Elements
+  const sliderSoilCrit = document.getElementById('slider-soil-crit');
+  const inputSoilCrit = document.getElementById('input-soil-crit');
+  const hintSoilCrit = document.getElementById('hint-soil-crit');
+
+  const sliderSoilSafe = document.getElementById('slider-soil-safe');
+  const inputSoilSafe = document.getElementById('input-soil-safe');
+  const hintSoilSafe = document.getElementById('hint-soil-safe');
+
+  const sliderAirHum = document.getElementById('slider-air-hum');
+  const inputAirHum = document.getElementById('input-air-hum');
+  const hintAirHum = document.getElementById('hint-air-hum');
+
+  const sliderTempMax = document.getElementById('slider-temp-max');
+  const inputTempMax = document.getElementById('input-temp-max');
+  const hintTempMax = document.getElementById('hint-temp-max');
+
+  // Summary Badges di Bagian Otomasi
+  const actuatorSoilCritBadge = document.getElementById('actuator-soil-crit-badge');
+  const actuatorAirDryBadge = document.getElementById('actuator-air-dry-badge');
+  const actuatorTempMaxBadge = document.getElementById('actuator-temp-max-badge');
+
+  // Teks Indikator di Kartu Checklist Logika
+  const ruleSoilCritText = document.getElementById('rule-soil-crit-text');
+  const ruleSoilSafeText = document.getElementById('rule-soil-safe-text');
+  const ruleAirHumText = document.getElementById('rule-air-hum-text');
+  const ruleSoilSafeSub = document.getElementById('rule-soil-safe-sub');
+  const ruleTempMaxText = document.getElementById('rule-temp-max-text');
+
+  // Indikator Ringkasan di Hero/Overview
+  const overviewSoilCritText = document.getElementById('overview-soil-crit-text');
+  const overviewSoilSafeText = document.getElementById('overview-soil-safe-text');
+  const overviewAirDryText = document.getElementById('overview-air-dry-text');
+  const overviewAutoRuleText = document.getElementById('overview-auto-rule-text');
+
+  // Elemen Konsol Prediksi & Evaluasi Real-Time
+  const evalValSoil = document.getElementById('eval-val-soil');
+  const evalChipSoil = document.getElementById('eval-chip-soil');
+  const evalValHum = document.getElementById('eval-val-hum');
+  const evalChipHum = document.getElementById('eval-chip-hum');
+  const evalValTemp = document.getElementById('eval-val-temp');
+  const evalChipTemp = document.getElementById('eval-chip-temp');
+  const evalPredIcon = document.getElementById('eval-pred-icon');
+  const evalPredText = document.getElementById('eval-pred-text');
+
+  // Tombol Aksi & Preset
+  const btnSaveThresholds = document.getElementById('btn-save-thresholds');
+  const btnResetThresholds = document.getElementById('btn-reset-thresholds');
+  const thresholdToast = document.getElementById('threshold-toast');
+  const presetButtons = document.querySelectorAll('.btn-preset-pill');
+
+  function setSliderFill(slider) {
+    if (!slider) return;
+    const min = Number(slider.min) || 0;
+    const max = Number(slider.max) || 100;
+    const val = Number(slider.value) || 0;
+    const pct = ((val - min) / (max - min)) * 100;
+    slider.style.background = `linear-gradient(to right, var(--brand-emerald) 0%, var(--brand-emerald-light) ${pct}%, var(--border-light) ${pct}%, var(--border-light) 100%)`;
+  }
+
+  function evaluateLiveThresholds() {
+    const soil = Number(currentTelemetry.soilMoisture) || 0;
+    const hum = Number(currentTelemetry.airHumidity) || 0;
+    const temp = Number(currentTelemetry.airTemp) || 0;
+    const { soilSafeLimit, soilCriticalLimit, airHumDryLimit, tempMaxLimit } = currentThresholds;
+
+    if (evalValSoil) evalValSoil.textContent = `${soil.toFixed(1)}%`;
+    if (evalValHum) evalValHum.textContent = `${hum.toFixed(1)}%`;
+    if (evalValTemp) evalValTemp.textContent = `${temp.toFixed(1)}°C`;
+
+    // Evaluasi Status Tanah
+    if (evalChipSoil) {
+      if (soil < soilCriticalLimit) {
+        evalChipSoil.style.background = 'rgba(245, 158, 11, 0.2)';
+        evalChipSoil.style.color = '#f59e0b';
+        evalChipSoil.textContent = 'Kritis (Perlu Siram)';
+      } else if (soil >= soilSafeLimit) {
+        evalChipSoil.style.background = 'var(--color-green-bg)';
+        evalChipSoil.style.color = 'var(--brand-emerald)';
+        evalChipSoil.textContent = 'Lembap Aman';
+      } else {
+        evalChipSoil.style.background = 'var(--color-blue-bg)';
+        evalChipSoil.style.color = '#0ea5e9';
+        evalChipSoil.textContent = 'Sedang Cukup';
+      }
+    }
+
+    // Evaluasi Status Udara
+    if (evalChipHum) {
+      if (hum < airHumDryLimit) {
+        evalChipHum.style.background = 'rgba(245, 158, 11, 0.2)';
+        evalChipHum.style.color = '#f59e0b';
+        evalChipHum.textContent = 'Udara Kering';
+      } else {
+        evalChipHum.style.background = 'var(--color-blue-bg)';
+        evalChipHum.style.color = '#0ea5e9';
+        evalChipHum.textContent = 'Cukup Lembap';
+      }
+    }
+
+    // Evaluasi Status Suhu
+    if (evalChipTemp) {
+      if (temp >= tempMaxLimit) {
+        evalChipTemp.style.background = 'rgba(239, 68, 68, 0.2)';
+        evalChipTemp.style.color = '#ef4444';
+        evalChipTemp.textContent = 'Terik Panas';
+      } else {
+        evalChipTemp.style.background = 'var(--color-green-bg)';
+        evalChipTemp.style.color = 'var(--brand-emerald)';
+        evalChipTemp.textContent = 'Sejuk Normal';
+      }
+    }
+
+    // Logika Evaluasi Otomasi Pompa (Tanah, Udara, Suhu)
+    let autoTrigger = false;
+    let reason = '';
+    if (soil < soilSafeLimit) {
+      if (soil < soilCriticalLimit) {
+        autoTrigger = true;
+        reason = `Tanah Kritis < ${soilCriticalLimit}%`;
+      } else if (hum < airHumDryLimit) {
+        autoTrigger = true;
+        reason = `Udara Kering < ${airHumDryLimit}%`;
+      } else if (temp >= tempMaxLimit) {
+        autoTrigger = true;
+        reason = `Suhu Panas >= ${tempMaxLimit}°C`;
+      }
+    }
+
+    if (evalPredIcon && evalPredText) {
+      if (autoTrigger) {
+        evalPredIcon.className = 'eval-prediction-icon on';
+        evalPredText.textContent = `MENYIRAM AKTIF (${reason})`;
+        evalPredText.style.color = 'var(--brand-emerald)';
+      } else {
+        evalPredIcon.className = 'eval-prediction-icon off';
+        evalPredText.textContent = soil >= soilSafeLimit ? 'STANDBY (Kadar Air Aman)' : 'STANDBY (Siaga Otomatis)';
+        evalPredText.style.color = 'var(--text-heading)';
+      }
+    }
+  }
+
+  function updateThresholdsUI(data, source = null) {
+    if (!data) return;
+    if (data.soilSafeLimit !== undefined) currentThresholds.soilSafeLimit = Number(data.soilSafeLimit);
+    if (data.soilCriticalLimit !== undefined) currentThresholds.soilCriticalLimit = Number(data.soilCriticalLimit);
+    if (data.airHumDryLimit !== undefined) currentThresholds.airHumDryLimit = Number(data.airHumDryLimit);
+    if (data.tempMaxLimit !== undefined) currentThresholds.tempMaxLimit = Number(data.tempMaxLimit);
+
+    const { soilSafeLimit, soilCriticalLimit, airHumDryLimit, tempMaxLimit } = currentThresholds;
+
+    // Sliders & Number Inputs
+    if (sliderSoilCrit && source !== 'slider-soil-crit') sliderSoilCrit.value = soilCriticalLimit;
+    if (inputSoilCrit && source !== 'input-soil-crit') inputSoilCrit.value = soilCriticalLimit;
+    if (hintSoilCrit) hintSoilCrit.textContent = `${soilCriticalLimit}%`;
+    setSliderFill(sliderSoilCrit);
+
+    if (sliderSoilSafe && source !== 'slider-soil-safe') sliderSoilSafe.value = soilSafeLimit;
+    if (inputSoilSafe && source !== 'input-soil-safe') inputSoilSafe.value = soilSafeLimit;
+    if (hintSoilSafe) hintSoilSafe.textContent = `${soilSafeLimit}%`;
+    setSliderFill(sliderSoilSafe);
+
+    if (sliderAirHum && source !== 'slider-air-hum') sliderAirHum.value = airHumDryLimit;
+    if (inputAirHum && source !== 'input-air-hum') inputAirHum.value = airHumDryLimit;
+    if (hintAirHum) hintAirHum.textContent = `${airHumDryLimit}%`;
+    setSliderFill(sliderAirHum);
+
+    if (sliderTempMax && source !== 'slider-temp-max') sliderTempMax.value = tempMaxLimit;
+    if (inputTempMax && source !== 'input-temp-max') inputTempMax.value = Number(tempMaxLimit).toFixed(1);
+    if (hintTempMax) hintTempMax.textContent = `${Number(tempMaxLimit).toFixed(1)}°C`;
+    setSliderFill(sliderTempMax);
+
+    // Summary Cards Badges
+    if (actuatorSoilCritBadge) actuatorSoilCritBadge.textContent = soilCriticalLimit;
+    if (actuatorAirDryBadge) actuatorAirDryBadge.textContent = airHumDryLimit;
+    if (actuatorTempMaxBadge) actuatorTempMaxBadge.textContent = Number(tempMaxLimit).toFixed(1);
+
+    // Rules Checklist
+    if (ruleSoilCritText) ruleSoilCritText.textContent = `${soilCriticalLimit}%`;
+    if (ruleSoilSafeText) ruleSoilSafeText.textContent = `>= ${soilSafeLimit}%`;
+    if (ruleAirHumText) ruleAirHumText.textContent = `${airHumDryLimit}%`;
+    if (ruleSoilSafeSub) ruleSoilSafeSub.textContent = `${soilSafeLimit}%`;
+    if (ruleTempMaxText) ruleTempMaxText.textContent = `${Number(tempMaxLimit).toFixed(1)}°C`;
+
+    // Overview Spans
+    if (overviewSoilCritText) overviewSoilCritText.textContent = `${soilCriticalLimit}%`;
+    if (overviewSoilSafeText) overviewSoilSafeText.textContent = `${soilSafeLimit}%`;
+    if (overviewAirDryText) overviewAirDryText.textContent = `${airHumDryLimit}%`;
+    if (overviewAutoRuleText) overviewAutoRuleText.textContent = `Siram < ${soilCriticalLimit}% | Stop >= ${soilSafeLimit}%`;
+
+    evaluateLiveThresholds();
+  }
+
+  async function saveThresholds(notify = true) {
+    if (notify && thresholdToast) {
+      thresholdToast.classList.add('visible');
+      setTimeout(() => thresholdToast.classList.remove('visible'), 2400);
+    }
+
+    localStorage.setItem('agritech_thresholds', JSON.stringify(currentThresholds));
+
+    if (socket && socket.connected) {
+      socket.emit('update_thresholds', currentThresholds);
+    }
+
+    try {
+      await fetch('/api/thresholds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentThresholds)
+      });
+    } catch (e) {
+      console.warn('API thresholds error:', e);
+    }
+
+    try {
+      await fetch('/api/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_thresholds', thresholds: currentThresholds })
+      });
+    } catch (e) {
+      console.warn('Vercel thresholds error:', e);
+    }
+
+    addTerminalLog({
+      source: 'CONFIG',
+      level: 'UPDATE',
+      message: `Ambang batas disimpan: Tanah Kritis ${currentThresholds.soilCriticalLimit}%, Aman ${currentThresholds.soilSafeLimit}%, Udara ${currentThresholds.airHumDryLimit}%, Suhu ${currentThresholds.tempMaxLimit}°C`
+    });
+  }
+
+  function initThresholdControls() {
+    // Muat dari localStorage jika tersimpan
+    try {
+      const saved = localStorage.getItem('agritech_thresholds');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        updateThresholdsUI(parsed);
+      } else {
+        updateThresholdsUI(currentThresholds);
+      }
+    } catch (e) {
+      updateThresholdsUI(currentThresholds);
+    }
+
+    // Slider Listeners: responsif real-time saat digeser
+    if (sliderSoilCrit) {
+      sliderSoilCrit.addEventListener('input', (e) => {
+        let val = Number(e.target.value);
+        if (val >= currentThresholds.soilSafeLimit) {
+          val = currentThresholds.soilSafeLimit - 5;
+          sliderSoilCrit.value = val;
+        }
+        updateThresholdsUI({ soilCriticalLimit: val }, 'slider-soil-crit');
+      });
+      sliderSoilCrit.addEventListener('change', () => saveThresholds(false));
+    }
+    if (inputSoilCrit) {
+      inputSoilCrit.addEventListener('change', (e) => {
+        let val = Math.min(60, Math.max(15, Number(e.target.value) || 35));
+        if (val >= currentThresholds.soilSafeLimit) val = currentThresholds.soilSafeLimit - 5;
+        updateThresholdsUI({ soilCriticalLimit: val });
+        saveThresholds(false);
+      });
+    }
+
+    if (sliderSoilSafe) {
+      sliderSoilSafe.addEventListener('input', (e) => {
+        let val = Number(e.target.value);
+        if (val <= currentThresholds.soilCriticalLimit) {
+          val = currentThresholds.soilCriticalLimit + 5;
+          sliderSoilSafe.value = val;
+        }
+        updateThresholdsUI({ soilSafeLimit: val }, 'slider-soil-safe');
+      });
+      sliderSoilSafe.addEventListener('change', () => saveThresholds(false));
+    }
+    if (inputSoilSafe) {
+      inputSoilSafe.addEventListener('change', (e) => {
+        let val = Math.min(90, Math.max(40, Number(e.target.value) || 50));
+        if (val <= currentThresholds.soilCriticalLimit) val = currentThresholds.soilCriticalLimit + 5;
+        updateThresholdsUI({ soilSafeLimit: val });
+        saveThresholds(false);
+      });
+    }
+
+    if (sliderAirHum) {
+      sliderAirHum.addEventListener('input', (e) => {
+        updateThresholdsUI({ airHumDryLimit: Number(e.target.value) }, 'slider-air-hum');
+      });
+      sliderAirHum.addEventListener('change', () => saveThresholds(false));
+    }
+    if (inputAirHum) {
+      inputAirHum.addEventListener('change', (e) => {
+        const val = Math.min(85, Math.max(30, Number(e.target.value) || 60));
+        updateThresholdsUI({ airHumDryLimit: val });
+        saveThresholds(false);
+      });
+    }
+
+    if (sliderTempMax) {
+      sliderTempMax.addEventListener('input', (e) => {
+        updateThresholdsUI({ tempMaxLimit: Number(e.target.value) }, 'slider-temp-max');
+      });
+      sliderTempMax.addEventListener('change', () => saveThresholds(false));
+    }
+    if (inputTempMax) {
+      inputTempMax.addEventListener('change', (e) => {
+        const val = Math.min(42, Math.max(25, Number(e.target.value) || 31));
+        updateThresholdsUI({ tempMaxLimit: val });
+        saveThresholds(false);
+      });
+    }
+
+    // Tombol Preset Cepat Tanaman
+    presetButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        presetButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const key = btn.getAttribute('data-preset');
+        if (CROP_PRESETS[key]) {
+          updateThresholdsUI(CROP_PRESETS[key]);
+          saveThresholds(true);
+        }
+      });
+    });
+
+    // Tombol Terapkan & Simpan
+    if (btnSaveThresholds) {
+      btnSaveThresholds.addEventListener('click', () => {
+        saveThresholds(true);
+      });
+    }
+
+    // Tombol Reset Standar
+    if (btnResetThresholds) {
+      btnResetThresholds.addEventListener('click', () => {
+        updateThresholdsUI(CROP_PRESETS.default);
+        presetButtons.forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-preset') === 'default');
+        });
+        saveThresholds(true);
+      });
+    }
   }
 
   // ==========================================================================
@@ -841,7 +1223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const sectionIds = ['metrics', 'trends', 'records', 'terminal'];
+  const sectionIds = ['overview', 'metrics', 'actuators', 'trends', 'records', 'terminal'];
   const observedSections = sectionIds.map(id => document.getElementById(id)).filter(Boolean);
   window.addEventListener('scroll', () => {
     const scrollPos = window.scrollY + 140;
@@ -861,6 +1243,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { passive: true });
 
   initHeroModalCube();
+  initThresholdControls();
 
   loadDailyRecords();
   setInterval(loadDailyRecords, 10000);

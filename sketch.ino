@@ -34,12 +34,11 @@ const char *nodeServerUrl = "http://192.168.110.156:3000/api/telemetry";
 DHT dht(PIN_DHT, DHTTYPE);
 BlynkTimer timer;
 
-// Ambang Batas Prioritas Kelembapan Tanah & Baterai
-const int SOIL_SAFE_LIMIT =
-    50; // Batas Aman: Jika tanah >= 50%, pompa WAJIB MATI
-const int SOIL_CRITICAL_LIMIT =
-    35; // Batas Kritis: Jika tanah < 35%, wajib siram
-const float AIR_HUM_DRY_LIMIT = 60.0; // Udara kering jika RH < 60%
+// Ambang Batas Prioritas Kelembapan Tanah, Udara, Suhu & Baterai (Dapat dikonfigurasi via Web)
+int soilSafeLimit = 50;        // Batas Aman: Jika tanah >= 50%, pompa WAJIB MATI
+int soilCriticalLimit = 35;    // Batas Kritis: Jika tanah < 35%, wajib siram
+float airHumDryLimit = 60.0;   // Udara kering jika RH < 60%
+float tempMaxLimit = 31.0;     // Batas Suhu Panas jika Suhu >= 31°C
 const int BATTERY_CUTOFF_LIMIT = 15;  // Batas Kritis Baterai (< 15% kunci pompa agar aki awet)
 
 bool isBlynkActive = false;
@@ -84,13 +83,16 @@ void processIrrigationLogic() {
     // Mode Manual: Ikuti target dari web/server
     triggerPump = manualPumpTarget;
   } else {
-    // Mode Otomatis: Prioritas utama kelembapan tanah
-    if (soilMoisture < SOIL_SAFE_LIMIT) {
-      if (soilMoisture < SOIL_CRITICAL_LIMIT) {
-        // Kondisi A: Tanah sangat kering kritis (< 35%), langsung siram
+    // Mode Otomatis: Prioritas kelembapan tanah, udara, dan suhu
+    if (soilMoisture < soilSafeLimit) {
+      if (soilMoisture < soilCriticalLimit) {
+        // Kondisi A: Tanah sangat kering kritis (< soilCriticalLimit), langsung siram
         triggerPump = true;
-      } else if (airHumidity < AIR_HUM_DRY_LIMIT) {
-        // Kondisi B: Tanah mulai kering (< 50%) DAN udara juga kering (< 60%)
+      } else if (airHumidity < airHumDryLimit) {
+        // Kondisi B: Tanah mulai kering (< soilSafeLimit) DAN udara juga kering (< airHumDryLimit)
+        triggerPump = true;
+      } else if (airTemp >= tempMaxLimit) {
+        // Kondisi C: Suhu lingkungan melampaui batas panas (>= tempMaxLimit)
         triggerPump = true;
       }
     }
@@ -146,7 +148,7 @@ void processIrrigationLogic() {
 
     int code = http.POST(json);
     if (code > 0) {
-      // Server membalas instruksi jika ada override manual dari web
+      // Server membalas instruksi jika ada override manual atau pembaruan ambang batas dari web
       String resp = http.getString();
       if (resp.indexOf("\"mode\":\"manual\"") > 0) {
         manualOverrideActive = true;
@@ -159,6 +161,24 @@ void processIrrigationLogic() {
         }
       } else if (resp.indexOf("\"mode\":\"auto\"") > 0) {
         manualOverrideActive = false;
+      }
+
+      // Sinkronisasi ambang batas dinamis dari Web jika tersedia
+      int idxSafe = resp.indexOf("\"soilSafeLimit\":");
+      if (idxSafe > 0) {
+        soilSafeLimit = resp.substring(idxSafe + 16).toInt();
+      }
+      int idxCrit = resp.indexOf("\"soilCriticalLimit\":");
+      if (idxCrit > 0) {
+        soilCriticalLimit = resp.substring(idxCrit + 20).toInt();
+      }
+      int idxHum = resp.indexOf("\"airHumDryLimit\":");
+      if (idxHum > 0) {
+        airHumDryLimit = resp.substring(idxHum + 17).toFloat();
+      }
+      int idxTemp = resp.indexOf("\"tempMaxLimit\":");
+      if (idxTemp > 0) {
+        tempMaxLimit = resp.substring(idxTemp + 15).toFloat();
       }
     }
     http.end();
