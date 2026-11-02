@@ -365,6 +365,268 @@
       opacity: 0.85;
     }
 
+    /* ==========================================================================
+       CYBER TOGGLE MODULE FOR PUMP (SAKLAR POMPA AIR KUBUS DEPAN-KIRI)
+       ========================================================================== */
+    .cube-toggle-module {
+      position: relative;
+      background: rgba(3, 26, 14, 0.78);
+      border: 1.5px solid rgba(127, 238, 100, 0.42);
+      border-radius: 8px;
+      padding: 7px 9px;
+      margin: 5px 0;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+
+    .cube-toggle-module:hover {
+      background: rgba(5, 38, 20, 0.9);
+      border-color: rgba(127, 238, 100, 0.85);
+      box-shadow: inset 0 0 14px rgba(127, 238, 100, 0.18), 0 4px 12px rgba(0, 0, 0, 0.45), 0 0 14px rgba(127, 238, 100, 0.4);
+      transform: scale(1.02);
+    }
+
+    .cube-toggle-module:active {
+      transform: scale(0.97);
+    }
+
+    .cube-toggle-module.is-on {
+      background: rgba(6, 44, 23, 0.92);
+      border-color: #7fee64;
+      box-shadow: inset 0 0 16px rgba(127, 238, 100, 0.25), 0 0 16px rgba(127, 238, 100, 0.55);
+    }
+
+    .cube-toggle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+
+    .cube-toggle-title {
+      font-family: monospace;
+      font-size: 0.52rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #bbf7d0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .cube-status-pill {
+      font-family: monospace;
+      font-size: 0.50rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      background: rgba(239, 68, 68, 0.28);
+      color: #ff6b6b;
+      border: 1px solid rgba(239, 68, 68, 0.65);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+      text-shadow: 0 0 6px #ef4444;
+      transition: all 0.25s ease;
+    }
+
+    .cube-status-pill.active,
+    .cube-status-pill.is-on {
+      background: rgba(34, 197, 94, 0.35);
+      color: #7fee64;
+      border-color: #7fee64;
+      box-shadow: 0 0 8px rgba(127, 238, 100, 0.6);
+      text-shadow: 0 0 6px #7fee64;
+    }
+
+    .cube-toggle-body {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .cube-toggle-switch-track {
+      position: relative;
+      width: 48px;
+      height: 22px;
+      border-radius: 11px;
+      background: #24070a;
+      border: 1.5px solid rgba(239, 68, 68, 0.5);
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75), 0 0 6px rgba(239, 68, 68, 0.3);
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+    }
+
+    .cube-toggle-module.is-on .cube-toggle-switch-track {
+      background: linear-gradient(90deg, #10b981 0%, #22c55e 100%);
+      border-color: #ddffdc;
+      box-shadow: 0 0 12px rgba(127, 238, 100, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    }
+
+    .cube-toggle-knob {
+      position: absolute;
+      top: 1.5px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff4d4d 0%, #dc2626 100%);
+      border: 1px solid #fecaca;
+      box-shadow: 0 0 10px #ef4444, 0 0 18px rgba(239, 68, 68, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: knobGlowRed 2s infinite alternate;
+    }
+
+    @keyframes knobGlowRed {
+      0% {
+        box-shadow: 0 0 8px #ef4444, 0 0 14px rgba(239, 68, 68, 0.6);
+      }
+      100% {
+        box-shadow: 0 0 12px #ff4d4d, 0 0 22px rgba(255, 77, 77, 0.85);
+      }
+    }
+
+    .cube-toggle-knob-core {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 5px #ffffff;
+      transition: all 0.25s ease;
+    }
+
+    .cube-toggle-module.is-on .cube-toggle-knob {
+      transform: translateX(25px);
+      background: #ffffff;
+      border-color: #bbf7d0;
+      box-shadow: 0 0 8px #ffffff, 0 0 14px #7fee64;
+      animation: none;
+    }
+
+    .cube-toggle-module.is-on .cube-toggle-knob-core {
+      background: #10b981;
+      box-shadow: 0 0 4px #10b981;
+    }
+
+    .cube-toggle-indicators {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: monospace;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+    }
+
+    .cube-ind-off {
+      color: rgba(255, 255, 255, 0.25);
+      transition: all 0.25s ease;
+    }
+
+    .cube-ind-off.active {
+      color: #ff4d4d;
+      text-shadow: 0 0 8px #ef4444, 0 0 14px rgba(239, 68, 68, 0.65);
+      animation: pulseGlowRed 1.8s infinite alternate;
+    }
+
+    @keyframes pulseGlowRed {
+      0% {
+        opacity: 0.85;
+        text-shadow: 0 0 5px #ef4444;
+      }
+      100% {
+        opacity: 1;
+        text-shadow: 0 0 12px #ff4d4d, 0 0 18px rgba(255, 77, 77, 0.7);
+      }
+    }
+
+    .cube-ind-on {
+      color: rgba(255, 255, 255, 0.25);
+      transition: all 0.25s ease;
+    }
+
+    .cube-ind-on.active {
+      color: #7fee64;
+      text-shadow: 0 0 8px #7fee64;
+      animation: pulseGlow 1.8s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      0% { opacity: 0.8; text-shadow: 0 0 4px #7fee64; }
+      100% { opacity: 1; text-shadow: 0 0 10px #7fee64; }
+    }
+
+    .cube-toggle-footer {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding-top: 3px;
+      border-top: 1px dashed rgba(127, 238, 100, 0.2);
+    }
+
+    .cube-pulse-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 7px #ef4444;
+      animation: blinkLedRed 1.4s infinite alternate;
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    @keyframes blinkLedRed {
+      0% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .cube-pulse-dot.active {
+      background: #7fee64;
+      box-shadow: 0 0 7px #7fee64;
+      animation: blinkLed 1s infinite alternate;
+    }
+
+    .cube-toggle-desc {
+      font-family: monospace;
+      font-size: 0.48rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #fca5a5;
+      text-shadow: 0 0 4px rgba(239, 68, 68, 0.35);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 0.25s ease, text-shadow 0.25s ease;
+    }
+
+    .cube-toggle-module.is-on .cube-toggle-desc {
+      color: #7fee64;
+      text-shadow: 0 0 4px rgba(127, 238, 100, 0.35);
+    }
+
+    /* Cube Face & Stage Reaction when Pump is Active */
+    .face-front.pump-active {
+      border-color: rgba(127, 238, 100, 0.95);
+      box-shadow: inset 0 0 28px rgba(16, 185, 129, 0.4), 0 0 16px rgba(127, 238, 100, 0.35);
+    }
+
+    .face-top.pump-active {
+      box-shadow: inset 0 0 32px rgba(255, 255, 255, 0.6), 0 0 30px rgba(127, 238, 100, 0.5);
+    }
+
+    .face-top.pump-active .hydro-ring-pulse {
+      border-color: #ffffff;
+      box-shadow: 0 0 20px #ffffff, inset 0 0 14px #7fee64;
+      animation: hydroRingPulse 1.4s ease-in-out infinite alternate;
+    }
+
     /* FRONT-RIGHT FACE */
     .face-right {
       transform: rotateY(90deg) translateZ(90px);
@@ -845,8 +1107,7 @@
     }
 
     .cube-rotator.is-pressed {
-      transform: scale3d(1.06, 0.86, 1.06) !important;
-      transition: transform 0.08s ease !important;
+      filter: brightness(1.12);
     }
 
     .sprout-sculpture.bounce-trigger {
@@ -1146,7 +1407,7 @@
 
             <!-- Cube 3D Rotator Node (Preserve-3D) -->
             <div class="cube-rotator" id="cube-rotator" role="button" tabindex="0"
-              title="Klik untuk mengalirkan nutrisi ke tunas">
+              title="Klik kubus atau saklar untuk menyalakan/mematikan pompa air">
 
               <!-- 6 FACES OF THE CUBE -->
               <!-- 1. TOP FACE (Wajah Atas Tempat Tunas Tumbuh) -->
@@ -1162,18 +1423,47 @@
                 <div class="cube-surface-ripple" id="cube-surface-ripple"></div>
               </div>
 
-              <!-- 2. FRONT-LEFT FACE (Wajah Depan-Kiri) -->
-              <div class="cube-face face-front">
+              <!-- 2. FRONT-LEFT FACE (Wajah Depan-Kiri dengan Saklar Pompa Interaktif) -->
+              <div class="cube-face face-front" id="cube-face-front">
                 <div class="face-wireframe-border"></div>
                 <div class="face-grid-matrix"></div>
                 <div class="face-tech-accent">
                   <span class="tech-chip">AGRITECH</span>
-                  <div class="tech-led-bar">
-                    <span class="led-dot active"></span>
-                    <span class="led-dot active"></span>
-                    <span class="led-dot active"></span>
+                  <div class="tech-led-bar" id="cube-led-bar">
+                    <span class="led-dot"></span>
+                    <span class="led-dot"></span>
+                    <span class="led-dot"></span>
                   </div>
                 </div>
+
+                <!-- SAKLAR TOGGLE KONTROL POMPA AIR INTERAKTIF -->
+                <div class="cube-toggle-module" id="cube-pump-toggle-module" role="switch" aria-checked="false" tabindex="0" title="Klik untuk On/Off Pompa Air">
+                  <div class="cube-toggle-header">
+                    <span class="cube-toggle-title">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #7fee64;">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                      </svg>
+                      POMPA AIR
+                    </span>
+                    <span class="cube-status-pill" id="cube-pump-status-pill">OFF</span>
+                  </div>
+                  <div class="cube-toggle-body">
+                    <div class="cube-toggle-switch-track" id="cube-toggle-track">
+                      <div class="cube-toggle-knob">
+                        <span class="cube-toggle-knob-core"></span>
+                      </div>
+                    </div>
+                    <div class="cube-toggle-indicators">
+                      <span class="cube-ind-off active" id="cube-ind-off">OFF</span>
+                      <span class="cube-ind-on" id="cube-ind-on">ON</span>
+                    </div>
+                  </div>
+                  <div class="cube-toggle-footer">
+                    <span class="cube-pulse-dot" id="cube-pulse-dot"></span>
+                    <span class="cube-toggle-desc" id="cube-toggle-desc">STANDBY (MATI)</span>
+                  </div>
+                </div>
+
                 <div class="face-circuit-lines"></div>
                 <div class="face-sub-caption">NODE ESP32 &bull; RTOS</div>
               </div>

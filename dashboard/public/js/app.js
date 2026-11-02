@@ -222,8 +222,61 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Sinkronisasi status saklar toggle pompa pada kubus 3D
+    updateCubePumpUI(isPumpOn);
+
     if (typeof evaluateLiveThresholds === 'function') {
       evaluateLiveThresholds();
+    }
+  }
+
+  // Sinkronisasi Tampilan Saklar Toggle Pompa pada Kubus 3D
+  function updateCubePumpUI(isPumpOn) {
+    const toggleModule = document.getElementById('cube-pump-toggle-module');
+    const statusPill = document.getElementById('cube-pump-status-pill');
+    const indOff = document.getElementById('cube-ind-off');
+    const indOn = document.getElementById('cube-ind-on');
+    const toggleDesc = document.getElementById('cube-toggle-desc');
+    const pulseDot = document.getElementById('cube-pulse-dot');
+    const faceFront = document.getElementById('cube-face-front');
+    const faceTop = document.querySelector('.cube-face.face-top');
+    const ledDots = document.querySelectorAll('#cube-led-bar .led-dot');
+    const cubeRotator = document.getElementById('cube-rotator');
+
+    if (toggleModule) {
+      toggleModule.classList.toggle('is-on', isPumpOn);
+      toggleModule.classList.toggle('is-off', !isPumpOn);
+      toggleModule.setAttribute('aria-checked', isPumpOn ? 'true' : 'false');
+    }
+    if (statusPill) {
+      statusPill.textContent = isPumpOn ? 'ON' : 'OFF';
+      statusPill.classList.toggle('active', isPumpOn);
+      statusPill.classList.toggle('is-on', isPumpOn);
+      statusPill.classList.toggle('is-off', !isPumpOn);
+    }
+    if (indOff && indOn) {
+      indOff.classList.toggle('active', !isPumpOn);
+      indOn.classList.toggle('active', isPumpOn);
+    }
+    if (toggleDesc) {
+      toggleDesc.textContent = isPumpOn ? 'MENYIRAM (AKTIF)' : 'STANDBY (MATI)';
+    }
+    if (pulseDot) {
+      pulseDot.classList.toggle('active', isPumpOn);
+    }
+    if (faceFront) {
+      faceFront.classList.toggle('pump-active', isPumpOn);
+    }
+    if (faceTop) {
+      faceTop.classList.toggle('pump-active', isPumpOn);
+    }
+    if (ledDots && ledDots.length) {
+      ledDots.forEach((dot) => {
+        dot.classList.toggle('active', isPumpOn);
+      });
+    }
+    if (cubeRotator) {
+      cubeRotator.setAttribute('title', isPumpOn ? 'Pompa Menyala (ON) — Klik kubus untuk MEMATIKAN pompa' : 'Pompa Mati (OFF) — Klik kubus untuk MENYALAKAN pompa');
     }
   }
 
@@ -449,13 +502,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTelemetryUI({ pumpStatus: targetState });
 
     if (socket && socket.connected) {
+      socket.emit('set_pump', { status: targetState });
       socket.emit('setPump', targetState);
     } else {
       try {
-        await fetch('/api/telemetry', {
+        await fetch('/api/pump', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'set_pump', status: targetState })
+          body: JSON.stringify({ action: targetState ? 'on' : 'off', mode: 'manual' })
         });
       } catch (e) {
         console.error(e);
@@ -1148,54 +1202,46 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Aksi Klik Interaktif (Triggering Animations, Sprout Bloom & Status Updates)
+    let lastToggleTime = 0;
+
+    // Aksi Klik Interaktif Kubus: Menyalakan atau Mematikan Pompa Air secara Fungsional
     function handleCubeClick(e) {
-      clickCount++;
-
-      // Perbarui Penghitung Nutrisi
-      if (clickCountElem) clickCountElem.textContent = clickCount;
-      if (clickPill) {
-        clickPill.classList.remove('pulse');
-        void clickPill.offsetWidth;
-        clickPill.classList.add('pulse');
+      if (e) {
+        if (e.stopPropagation) e.stopPropagation();
       }
+      const now = Date.now();
+      if (now - lastToggleTime < 350) return;
+      lastToggleTime = now;
 
-      // Animasi Reaksi Tunas (Sprout Springs Up & Blooms)
-      if (window.Sprout3D && window.Sprout3D.isReady) {
-        window.Sprout3D.triggerBounce();
-      }
-      if (sproutSculpture) {
-        sproutSculpture.classList.remove('bounce-trigger');
-        void sproutSculpture.offsetWidth;
-        sproutSculpture.classList.add('bounce-trigger');
-      }
+      // Balik status pompa saat kubus atau toggle diklik
+      const nextPumpState = !currentTelemetry.pumpStatus;
+      handlePumpToggle(nextPumpState);
 
-      // Gelombang Ripple di Permukaan Wajah Atas
-      if (surfaceRipple) {
-        surfaceRipple.classList.remove('trigger');
-        void surfaceRipple.offsetWidth;
-        surfaceRipple.classList.add('trigger');
-      }
-
-      // Ledakan Partikel Nutrisi Bercahaya
-      spawnNutrientSparks();
-
-      // Perbarui Teks Status Badge
-      if (badgeText && statusBadge) {
-        msgIndex = (msgIndex + 1) % nutrientMessages.length;
-        badgeText.textContent = nutrientMessages[msgIndex];
-        statusBadge.classList.remove('highlight');
-        void statusBadge.offsetWidth;
-        statusBadge.classList.add('highlight');
-        setTimeout(() => statusBadge.classList.remove('highlight'), 1800);
+      // Feedback animasi responsif yang selaras dengan status pompa
+      if (nextPumpState) {
+        // Efek saat pompa DINYALAKAN: Tunas menyerap air & riak permukaan
+        if (window.Sprout3D && window.Sprout3D.isReady) {
+          window.Sprout3D.triggerBounce();
+        }
+        if (sproutSculpture) {
+          sproutSculpture.classList.remove('bounce-trigger');
+          void sproutSculpture.offsetWidth;
+          sproutSculpture.classList.add('bounce-trigger');
+        }
+        if (surfaceRipple) {
+          surfaceRipple.classList.remove('trigger');
+          void surfaceRipple.offsetWidth;
+          surfaceRipple.classList.add('trigger');
+        }
+        spawnNutrientSparks();
       }
 
       // Log Aktivitas ke Terminal Sistem
       if (typeof addTerminalLog === 'function') {
         addTerminalLog({
-          source: 'TUNAS_IOT',
-          level: 'INFO',
-          message: `Impuls nutrisi tunas disiram manual (#${clickCount}) — Status pertumbuhan: SANGAT OPTIMAL`
+          source: 'KONTROL_KUBUS',
+          level: nextPumpState ? 'INFO' : 'STANDBY',
+          message: `Kubus 3D ditekan: Pompa Nutrisi berhasil ${nextPumpState ? 'DINYALAKAN (ON)' : 'DIMATIKAN (OFF)'}`
         });
       }
     }
@@ -1206,12 +1252,13 @@ document.addEventListener('DOMContentLoaded', () => {
         handleCubeClick(e);
       }, { passive: true });
     }
-    if (cubeRotator) {
-      cubeRotator.addEventListener('click', handleCubeClick);
+    const cubePumpToggleMod = document.getElementById('cube-pump-toggle-module');
+    if (cubePumpToggleMod) {
+      cubePumpToggleMod.addEventListener('click', handleCubeClick);
     }
-    if (statusBadge) {
-      statusBadge.addEventListener('click', handleCubeClick);
-    }
+
+    // Inisialisasi tampilan saklar toggle kubus dengan status awal
+    updateCubePumpUI(!!currentTelemetry.pumpStatus);
   }
 
   // Nav Tab Active State & ScrollSpy

@@ -297,12 +297,15 @@ io.on('connection', (socket) => {
     io.emit('state_update', { mode: state.mode, telemetry: state.telemetry });
   });
 
-  socket.on('set_pump', (data) => {
+  const handlePumpReq = (data) => {
     state.mode = 'manual';
-    state.telemetry.pumpStatus = !!data.status;
-    addLog('SOCKET', data.status ? 'WARN' : 'INFO', `Socket request: Pump -> ${data.status ? 'ON' : 'OFF'} (Mode=MANUAL)`);
+    const status = (typeof data === 'object' && data !== null) ? !!data.status : !!data;
+    state.telemetry.pumpStatus = status;
+    addLog('SOCKET', status ? 'WARN' : 'INFO', `Socket request: Pump -> ${status ? 'ON' : 'OFF'} (Mode=MANUAL)`);
     io.emit('state_update', { mode: state.mode, telemetry: state.telemetry });
-  });
+  };
+  socket.on('set_pump', handlePumpReq);
+  socket.on('setPump', handlePumpReq);
 
   socket.on('set_mode', (mode) => {
     state.mode = mode === 'manual' ? 'manual' : 'auto';
