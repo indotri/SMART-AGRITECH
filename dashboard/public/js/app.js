@@ -1067,6 +1067,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let mouseNormX = 0;
     let mouseNormY = 0;
     let isHovering = false;
+    let isPressed = false;
+    let pressScale = 1.0;
     let clickCount = 0;
     let animTime = 0;
 
@@ -1102,14 +1104,17 @@ document.addEventListener('DOMContentLoaded', () => {
       currentRotX += (targetRotX - currentRotX) * 0.085;
       currentRotY += (targetRotY - currentRotY) * 0.085;
 
-      const bobY = isHovering ? (mouseNormY * -8) : ambientBob;
+      const targetScale = isPressed ? 0.94 : 1.0;
+      pressScale += (targetScale - pressScale) * 0.25;
 
-      // Terapkan Transformasi 3D ke Kubus
-      cubeRotator.style.transform = `rotateX(${currentRotX.toFixed(2)}deg) rotateY(${currentRotY.toFixed(2)}deg) translateY(${bobY.toFixed(2)}px)`;
+      const bobY = (isHovering ? (mouseNormY * -8) : ambientBob) + (isPressed ? 4 : 0);
+
+      // Terapkan Transformasi 3D ke Kubus (Selalu mempertahankan 3D perspektif isometric!)
+      cubeRotator.style.transform = `rotateX(${currentRotX.toFixed(2)}deg) rotateY(${currentRotY.toFixed(2)}deg) translateY(${bobY.toFixed(2)}px) scale3d(${pressScale.toFixed(3)}, ${pressScale.toFixed(3)}, ${pressScale.toFixed(3)})`;
 
       // Sinkronisasi Bayangan Kontak Bawah
       if (groundShadow) {
-        const shadowScale = isHovering ? 1.05 : (1 + ambientBob * 0.015);
+        const shadowScale = (isHovering ? 1.05 : (1 + ambientBob * 0.015)) * (isPressed ? 0.92 : 1.0);
         groundShadow.style.transform = `rotateX(74deg) translateZ(-40px) scale(${shadowScale.toFixed(3)})`;
         groundShadow.style.opacity = isHovering ? '0.9' : '0.75';
       }
@@ -1146,29 +1151,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     heroArea.addEventListener('mouseleave', () => {
       isHovering = false;
+      isPressed = false;
       mouseNormX = 0;
       mouseNormY = 0;
     });
 
     heroArea.addEventListener('touchend', () => {
       isHovering = false;
+      isPressed = false;
       mouseNormX = 0;
       mouseNormY = 0;
     });
 
-    // Interaksi Tekan (Mousedown / Pointerdown)
+    // Interaksi Tekan Tactile 3D (Mousedown / Pointerdown)
     function onPointerDown() {
-      cubeRotator.classList.add('is-pressed');
+      isPressed = true;
     }
 
     function onPointerUp() {
-      cubeRotator.classList.remove('is-pressed');
+      isPressed = false;
     }
 
     if (cubeStage) {
       cubeStage.addEventListener('pointerdown', onPointerDown);
-      window.addEventListener('pointerup', onPointerUp);
+      cubeStage.addEventListener('touchstart', onPointerDown, { passive: true });
     }
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    window.addEventListener('touchend', onPointerUp, { passive: true });
+    window.addEventListener('touchcancel', onPointerUp, { passive: true });
+    window.addEventListener('blur', onPointerUp);
 
     // Ledakan Partikel Cahaya Nutrisi (Particle Eruption)
     function spawnNutrientSparks() {
