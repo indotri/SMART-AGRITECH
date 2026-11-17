@@ -1220,6 +1220,7 @@
       .hero-cube-showcase-area {
         height: 330px;
         margin: 1.5rem auto 2rem;
+        touch-action: pan-y;
       }
 
       .cube-radial-bloom {
@@ -1230,7 +1231,7 @@
 
       /* Scale the entire 3D stage and sprout together seamlessly on mobile */
       .cube-stage-3d {
-        transform: scale(0.8);
+        transform: scale(0.80);
         transform-origin: center center;
       }
     }
@@ -1243,6 +1244,7 @@
 
       .cube-stage-3d {
         transform: scale(0.72);
+        transform-origin: center center;
       }
     }
   </style>
@@ -1718,9 +1720,17 @@
               </div>
               <span class="badge-pill-green">SEJUK NORMAL</span>
             </div>
-            <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0;">
+            <div style="display: flex; align-items: baseline; gap: 4px; margin: 0.5rem 0 0.25rem;">
               <span class="stat-huge-number" id="val-temp-overview">24.2</span>
               <span class="stat-unit-text">°C</span>
+            </div>
+            <!-- Indikator Suhu Air Nutrisi DS18B20 (Waterproof) -->
+            <div class="ds18b20-indicator-chip" style="margin: 0.5rem 0 0.5rem; padding: 0.4rem 0.65rem; background: var(--bg-nested); border: 1px solid var(--border-card); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;">
+              <span style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; font-weight: 700; color: var(--brand-emerald);">
+                <span class="dot-indicator dot-green" style="width: 7px; height: 7px;"></span>
+                DS18B20 Air Tandon (GPIO 4)
+              </span>
+              <span style="font-family: var(--font-title); font-size: 0.95rem; font-weight: 800; color: var(--text-heading);" id="val-water-temp-overview">24.8°C</span>
             </div>
           </div>
           <div class="card-bottom-info">
@@ -2010,20 +2020,20 @@
             </div>
             <div style="display: flex; gap: 0.75rem; font-size: 0.75rem; font-weight: 700;">
               <span style="color: #0ea5e9;">● Udara (24.2°C)</span>
-              <span style="color: var(--brand-emerald);">● Media (21.5°C)</span>
+              <span style="color: var(--brand-emerald);">● Air Nutrisi DS18B20</span>
             </div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.75rem 0;">
             <div class="tile-metric-box">
-              <div class="tile-metric-label">Suhu Udara Kanopi</div>
-              <div class="tile-metric-value">24.2°C <span
+              <div class="tile-metric-label">Suhu Udara Kanopi (DHT22)</div>
+              <div class="tile-metric-value"><span id="val-air-temp-metrics">24.2°C</span> <span
                   style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Target: 24.0°C</span></div>
             </div>
             <div class="tile-metric-box">
-              <div class="tile-metric-label">Suhu Media Perakaran</div>
-              <div class="tile-metric-value">21.5°C <span
-                  style="font-size: 0.7rem; font-weight: 600; color: var(--brand-emerald);">Sejuk Ideal</span></div>
+              <div class="tile-metric-label">Air Nutrisi Tandon (DS18B20)</div>
+              <div class="tile-metric-value"><span id="val-water-temp-metrics">24.8°C</span> <span
+                  style="font-size: 0.7rem; font-weight: 600; color: var(--brand-emerald);">Optimal</span></div>
             </div>
           </div>
 
@@ -2796,6 +2806,49 @@
       </div>
     </footer>
   </main>
+
+  <!-- ==========================================================================
+       NAVIGASI BAWAH MOBILE (Bottom Navigation Bar Kaca Frosted - Akses Mudah)
+       ========================================================================== -->
+  <nav class="mobile-bottom-nav" aria-label="Navigasi Utama Ponsel">
+    <a href="#overview" class="mobile-nav-btn active" id="mobile-nav-overview" title="Beranda & Visual 3D">
+      <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span class="mobile-nav-label">Beranda</span>
+    </a>
+    <a href="#metrics" class="mobile-nav-btn" id="mobile-nav-metrics" title="Sensor Lingkungan">
+      <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+      </svg>
+      <span class="mobile-nav-label">Sensor</span>
+    </a>
+    <a href="#actuators" class="mobile-nav-btn" id="mobile-nav-actuators" title="Otomasi & Kontrol Pompa">
+      <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span class="mobile-nav-label">Otomasi</span>
+    </a>
+    <a href="#trends" class="mobile-nav-btn" id="mobile-nav-trends" title="Grafik Pergerakan">
+      <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"></line>
+        <line x1="12" y1="20" x2="12" y2="4"></line>
+        <line x1="6" y1="20" x2="6" y2="14"></line>
+      </svg>
+      <span class="mobile-nav-label">Grafik</span>
+    </a>
+    <a href="#records" class="mobile-nav-btn" id="mobile-nav-records" title="Laporan & Unduh Excel">
+      <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+      </svg>
+      <span class="mobile-nav-label">Laporan</span>
+    </a>
+  </nav>
 
   <!-- Skrip JS -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>

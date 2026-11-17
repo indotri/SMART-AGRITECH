@@ -11,6 +11,8 @@ CompileFlags:
     - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/DHT sensor library"
     - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/Adafruit Unified Sensor"
     - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/Blynk/src"
+    - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/OneWire"
+    - "-IC:/Users/prati/Downloads/hidro/.pio/libdeps/esp32dev/DallasTemperature"
     - "-Wno-unknown-warning-option"
     - "-Wno-unused-command-line-argument"
   Remove:

@@ -31,6 +31,7 @@ let state = {
   telemetry: {
     soilMoisture: 42,
     airTemp: 28.4,
+    waterTemp: 25.0,
     airHumidity: 58.2,
     pumpStatus: false,
     batteryVoltage: 12.6,
@@ -119,6 +120,19 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+app.get('/api/telemetry', (req, res) => {
+  const isHardwareLive = !!(state.lastHardwarePing && (Date.now() - state.lastHardwarePing < 20000));
+  res.json({
+    success: true,
+    isHardwareLive,
+    lastHardwarePing: state.lastHardwarePing,
+    mode: state.mode,
+    thresholds: state.thresholds,
+    telemetry: state.telemetry,
+    history
+  });
+});
+
 app.get('/api/history', (req, res) => {
   res.json({ success: true, history });
 });
@@ -160,9 +174,23 @@ app.get('/api/records/download/:filename', (req, res) => {
   }
 });
 
+// Telemetry GET endpoint (Fallback polling & state check)
+app.get('/api/telemetry', (req, res) => {
+  const isHardwareLive = !!(state.lastHardwarePing && (Date.now() - state.lastHardwarePing < 15000));
+  res.json({
+    success: true,
+    telemetry: state.telemetry,
+    history,
+    isHardwareLive,
+    lastHardwarePing: state.lastHardwarePing,
+    thresholds: state.thresholds,
+    mode: state.mode
+  });
+});
+
 // ESP32 Telemetry Push Endpoint
 app.post('/api/telemetry', (req, res) => {
-  const { soilMoisture, airTemp, airHumidity, pumpStatus, batteryVoltage, batteryPercent } = req.body;
+  const { soilMoisture, airTemp, airHumidity, pumpStatus, batteryVoltage, batteryPercent, waterTemp } = req.body;
 
   if (soilMoisture === undefined || airTemp === undefined || airHumidity === undefined) {
     return res.status(400).json({ error: 'Missing required fields: soilMoisture, airTemp, airHumidity' });
@@ -183,10 +211,12 @@ app.post('/api/telemetry', (req, res) => {
   const batPct = batteryPercent !== undefined ? Number(batteryPercent) : state.telemetry.batteryPercent;
   const solarVolt = batPct >= 98 ? 13.8 : 18.2;
   const solarState = batVolt >= 13.6 ? 'FLOAT' : (batVolt < 11.2 ? 'CRITICAL' : 'CHARGING');
+  const wTemp = waterTemp !== undefined ? Number(waterTemp) : Number(airTemp);
 
   state.telemetry = {
     soilMoisture: Number(soilMoisture),
     airTemp: Number(airTemp),
+    waterTemp: wTemp,
     airHumidity: Number(airHumidity),
     pumpStatus: evaluatedPump,
     batteryVoltage: batVolt,
@@ -200,6 +230,7 @@ app.post('/api/telemetry', (req, res) => {
     time: new Date().toLocaleTimeString(),
     soilMoisture: state.telemetry.soilMoisture,
     airTemp: state.telemetry.airTemp,
+    waterTemp: state.telemetry.waterTemp,
     airHumidity: state.telemetry.airHumidity,
     pumpStatus: state.telemetry.pumpStatus,
     batteryVoltage: state.telemetry.batteryVoltage,
@@ -210,10 +241,12 @@ app.post('/api/telemetry', (req, res) => {
   if (history.length > MAX_HISTORY) history.shift();
 
   addLog('ESP32', evaluatedPump ? 'WARN' : 'INFO', 
-    `Soil:${soilMoisture}% | RH:${airHumidity}% | Temp:${airTemp}°C | Bat:${batVolt}V (${batPct}%) | Relay:${evaluatedPump ? 'ON' : 'OFF'} [${state.mode.toUpperCase()}]`);
+    `Soil:${soilMoisture}% | RH:${airHumidity}% | Suhu:${airTemp}°C (Air:${wTemp}°C) | Bat:${batVolt}V (${batPct}%) | Relay:${evaluatedPump ? 'ON' : 'OFF'} [${state.mode.toUpperCase()}]`);
 
   io.emit('telemetry', state.telemetry);
   io.emit('history_point', point);
+  const isHwLive = !!(state.lastHardwarePing && (Date.now() - state.lastHardwarePing < 15000));
+  io.emit('hardware_status', { isHardwareLive: isHwLive, lastHardwarePing: state.lastHardwarePing });
 
   // Catat rekaman telemetri ke logger harian Excel
   excelLogger.record(state.telemetry, state.mode);
@@ -284,10 +317,12 @@ app.post('/api/simulation', (req, res) => {
 
 // Socket.IO Handling
 io.on('connection', (socket) => {
+  const isHardwareLive = !!(state.lastHardwarePing && (Date.now() - state.lastHardwarePing < 20000));
   socket.emit('init', {
     state,
     history,
-    logs
+    logs,
+    isHardwareLive
   });
 
   socket.on('resume_auto', () => {
@@ -334,21 +369,27 @@ io.on('connection', (socket) => {
 // Simulation Engine (generates smooth natural variation when hardware is not streaming)
 let simTick = 0;
 setInterval(() => {
-  if (!state.simulationEnabled) return;
-
-  simTick++;
-  // Subtle drift in soil moisture
-  let currentSoil = state.telemetry.soilMoisture;
-  if (state.telemetry.pumpStatus) {
-    // Soil gets wet when pump is on
-    currentSoil = Math.min(65, currentSoil + 3);
-  } else {
-    // Soil dries gradually
-    currentSoil = Math.max(25, currentSoil - (simTick % 4 === 0 ? 1 : 0));
+  // Cek apakah hardware ESP32 aktif streaming (mengirim paket dalam 12 detik terakhir)
+  const isHardwareStreaming = !!(state.lastHardwarePing && (Date.now() - state.lastHardwarePing < 12000));
+  if (isHardwareStreaming) {
+    // Hardware ESP32 asli sedang streaming aktif, jangan timpa dengan data simulasi
+    return;
   }
 
-  const currentTemp = +(27.5 + Math.sin(simTick * 0.1) * 1.8).toFixed(1);
-  const currentHum = +(58.0 + Math.cos(simTick * 0.12) * 5.0).toFixed(1);
+  simTick++;
+  // Variasi alami kelembapan tanah
+  let currentSoil = state.telemetry.soilMoisture;
+  if (state.telemetry.pumpStatus) {
+    currentSoil = Math.min(65, currentSoil + 2);
+  } else {
+    currentSoil = Math.max(28, currentSoil - (simTick % 3 === 0 ? 1 : 0));
+  }
+
+  // Suhu Udara (DHT22) dengan variasi natural
+  const currentTemp = +(27.0 + Math.sin(simTick * 0.15) * 2.2).toFixed(1);
+  // Suhu Air Nutrisi (DS18B20) dengan variasi lembut tandon air
+  const currentWaterTemp = +(24.2 + Math.cos(simTick * 0.12) * 1.5).toFixed(1);
+  const currentHum = +(58.0 + Math.cos(simTick * 0.18) * 5.5).toFixed(1);
 
   const prevPump = state.telemetry.pumpStatus;
   let nextPump;
@@ -365,13 +406,13 @@ setInterval(() => {
   const simSolarVolt = isDaylight ? +(16.0 + solarCycle * 2.8).toFixed(1) : 0.0;
 
   if (nextPump) {
-    // Pump active draws significant power
+    // Pompa aktif menyedot arus
     currentBat = Math.max(10.8, +(currentBat - 0.04).toFixed(2));
   } else if (isDaylight) {
-    // Sun is charging battery
+    // Panel surya mengisi daya baterai
     currentBat = Math.min(13.8, +(currentBat + 0.02).toFixed(2));
   } else {
-    // Idle nighttime discharge
+    // Pengurangan daya baterai pasif
     currentBat = Math.max(11.2, +(currentBat - 0.005).toFixed(2));
   }
 
@@ -381,6 +422,7 @@ setInterval(() => {
   state.telemetry = {
     soilMoisture: currentSoil,
     airTemp: currentTemp,
+    waterTemp: currentWaterTemp,
     airHumidity: currentHum,
     pumpStatus: nextPump,
     batteryVoltage: currentBat,
@@ -393,14 +435,15 @@ setInterval(() => {
   if (nextPump !== prevPump) {
     addLog('LOGIC', nextPump ? 'WARN' : 'OK', 
       nextPump 
-        ? `AUTOMATION: Soil dropped to ${currentSoil}% (below limit). PUMP TRIGGERED.` 
-        : `AUTOMATION: Soil reached ${currentSoil}%. PUMP STOPPED.`);
+        ? `OTOMASI: Kelembapan tanah ${currentSoil}% (di bawah batas aman). POMPA MENYALA.` 
+        : `OTOMASI: Kelembapan tanah ${currentSoil}%. POMPA STANDBY.`);
   }
 
   const point = {
     time: new Date().toLocaleTimeString(),
     soilMoisture: state.telemetry.soilMoisture,
     airTemp: state.telemetry.airTemp,
+    waterTemp: state.telemetry.waterTemp,
     airHumidity: state.telemetry.airHumidity,
     pumpStatus: state.telemetry.pumpStatus,
     batteryVoltage: state.telemetry.batteryVoltage,
@@ -413,6 +456,8 @@ setInterval(() => {
 
   io.emit('telemetry', state.telemetry);
   io.emit('history_point', point);
+  const isHwLive = !!(state.lastHardwarePing && (Date.now() - state.lastHardwarePing < 12000));
+  io.emit('hardware_status', { isHardwareLive: isHwLive, lastHardwarePing: state.lastHardwarePing });
 
   // Catat ke logger harian Excel saat simulasi aktif
   excelLogger.record(state.telemetry, state.mode);

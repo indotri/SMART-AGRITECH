@@ -526,16 +526,19 @@
     renderer.setSize(width, height);
   }
 
-  // Sinkronisasi Orientasi 3D & Bobbing dengan Kubus
-  function updateTransform(rotX, rotY, bobY) {
+  // Sinkronisasi Orientasi 3D & Bobbing dengan Kubus (Termasuk Skala Responsif Mobile)
+  function updateTransform(rotX, rotY, bobY, stageScale = 1.0) {
     if (!isReady) return;
 
     animClock += 16;
 
+    // Sinkronisasi Skala Kubus (Mobile 0.72 - 0.80, Desktop 1.0, Tactile Press)
+    cubeAnchor.scale.set(stageScale, stageScale, stageScale);
+
     // Sinkronisasi Rotasi Kubus
     cubeAnchor.rotation.x = rotX * (Math.PI / 180);
     cubeAnchor.rotation.y = rotY * (Math.PI / 180);
-    cubeAnchor.position.y = -bobY; // Inversi karena Three.js Y adalah ke atas
+    cubeAnchor.position.y = -bobY * stageScale; // Inversi dan sesuaikan offset skala
 
     // Idle Harmonic Breathing Botanical Sway
     if (stemMesh) {

@@ -6,14 +6,11 @@
 #include "DHT.h"
 #include <Arduino.h>
 #include <BlynkSimpleEsp32.h>
+#include <DallasTemperature.h>
 #include <HTTPClient.h>
-#include <LiquidCrystal_I2C.h>
+#include <OneWire.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
-#include <Wire.h>
-
-// Inisialisasi LCD I2C di alamat 0x27 (16 kolom x 2 baris)
-LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Wi-Fi Virtual khusus Wokwi (tidak perlu diubah)
 char auth[] = BLYNK_AUTH_TOKEN;
@@ -22,16 +19,19 @@ char pass[] = "";
 
 // URL Gateway Web Dashboard Node.js
 // - Jika di Wokwi for VS Code / Wokwi IoT Gateway: gunakan "http://host.wokwi.internal:3000/api/telemetry" atau IP laptop
-// - IP Laptop Anda saat ini: "http://192.168.110.156:3000/api/telemetry"
-const char *nodeServerUrl = "http://192.168.110.156:3000/api/telemetry";
+// - IP Laptop Anda saat ini: "http://10.70.86.183:3000/api/telemetry"
+const char *nodeServerUrl = "http://10.70.86.183:3000/api/telemetry";
 
 #define PIN_SOIL_POT 34
 #define PIN_BATTERY_POT 35 // Pin ADC untuk monitoring tegangan baterai/solar via voltage divider
 #define PIN_DHT 15
 #define DHTTYPE DHT22
 #define PIN_RELAY 2
+#define PIN_DS18B20 4      // Pin Data 1-Wire Sensor Suhu Air Waterproof DS18B20
 
 DHT dht(PIN_DHT, DHTTYPE);
+OneWire oneWire(PIN_DS18B20);
+DallasTemperature ds18b20(&oneWire);
 BlynkTimer timer;
 
 // Ambang Batas Prioritas Kelembapan Tanah, Udara, Suhu & Baterai (Dapat dikonfigurasi via Web)
@@ -46,13 +46,27 @@ bool manualOverrideActive = false;
 bool manualPumpTarget = false;
 
 void processIrrigationLogic() {
-  // 1. Baca data sensor lingkungan
+  // 1. Baca data sensor lingkungan (Udara & Suhu Air Nutrisi)
   float airHumidity = dht.readHumidity();
-  float airTemp = dht.readTemperature(); // Hanya untuk monitoring tampilan
+  float airTemp = dht.readTemperature(); // Suhu udara DHT22
 
-  // 2. Baca Potensiometer Tanah & Baterai Surya (ADC ESP32: 0 - 4095)
+  // Baca sensor suhu air tandon nutrisi DS18B20 (Waterproof)
+  ds18b20.requestTemperatures();
+  float waterTemp = ds18b20.getTempCByIndex(0);
+  // Validasi nilai pembacaan DS18B20 (DEVICE_DISCONNECTED_C = -127°C)
+  bool waterSensorValid = (waterTemp != DEVICE_DISCONNECTED_C && waterTemp > -40.0 && waterTemp < 85.0);
+  if (!waterSensorValid) {
+    waterTemp = airTemp; // Fallback ke suhu udara jika sensor fisik belum tersambung
+  }
+
+  // 2. Baca Sensor Kelembapan Tanah (ADC ESP32: 0 - 4095 di GPIO 34)
   int rawSoil = analogRead(PIN_SOIL_POT);
-  int soilMoisture = map(rawSoil, 0, 4095, 0, 100);
+  int soilMoisture = 0;
+  if (rawSoil > 1000 && rawSoil < 3900) {
+    soilMoisture = constrain(map(rawSoil, 3200, 1300, 0, 100), 0, 100);
+  } else {
+    soilMoisture = constrain(map(rawSoil, 0, 4095, 0, 100), 0, 100);
+  }
 
   int rawBattery = analogRead(PIN_BATTERY_POT);
   // Kalibrasi tegangan baterai aki 12V (rentang 10.0V - 14.5V)
@@ -71,9 +85,10 @@ void processIrrigationLogic() {
   // 3. Kirim data ke Pin Virtual Blynk (jika terhubung)
   if (isBlynkActive) {
     Blynk.virtualWrite(V0, soilMoisture);   // Gauge Tanah
-    Blynk.virtualWrite(V1, airTemp);        // Nilai Suhu
+    Blynk.virtualWrite(V1, airTemp);        // Suhu Udara
     Blynk.virtualWrite(V2, airHumidity);    // Gauge RH Udara
     Blynk.virtualWrite(V4, batteryPercent); // Level Baterai (%)
+    Blynk.virtualWrite(V5, waterTemp);      // Suhu Air Nutrisi (DS18B20)
   }
 
   // 4. Evaluasi Logika Pompa (PRIORITAS: OVERRIDE MANUAL & SAFETY BATERAI)
@@ -115,24 +130,7 @@ void processIrrigationLogic() {
       Blynk.virtualWrite(V3, 0);
   }
 
-  // 6. Tampilkan ke Layar LCD 16x2
-  char bufferLine1[17];
-  snprintf(bufferLine1, sizeof(bufferLine1), "T:%.0fC H:%.0f%% B:%d%%", airTemp,
-           airHumidity, batteryPercent);
-  lcd.setCursor(0, 0);
-  lcd.print(bufferLine1);
-
-  char bufferLine2[17];
-  const char *statusStr =
-      lowBatteryCutoff ? "BAT:LOW "
-                       : (triggerPump ? "PUMP:ON "
-                                      : (manualOverrideActive ? "MANUAL  " : "STANDBY "));
-  snprintf(bufferLine2, sizeof(bufferLine2), "Soil:%2d%% %-9s", soilMoisture,
-           statusStr);
-  lcd.setCursor(0, 1);
-  lcd.print(bufferLine2);
-
-  // 7. Kirim Telemetry ke Server Web Node.js
+  // 6. Kirim Telemetry ke Server Web Node.js
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     http.begin(nodeServerUrl);
@@ -141,6 +139,7 @@ void processIrrigationLogic() {
 
     String json = "{\"soilMoisture\":" + String(soilMoisture) +
                   ",\"airTemp\":" + String(airTemp, 1) +
+                  ",\"waterTemp\":" + String(waterTemp, 1) +
                   ",\"airHumidity\":" + String(airHumidity, 1) +
                   ",\"pumpStatus\":" + String(triggerPump ? 1 : 0) +
                   ",\"batteryVoltage\":" + String(batteryVoltage, 2) +
@@ -148,6 +147,7 @@ void processIrrigationLogic() {
 
     int code = http.POST(json);
     if (code > 0) {
+      Serial.printf("[HTTP %d] Telemetri terkirim ke Web Dashboard!\n", code);
       // Server membalas instruksi jika ada override manual atau pembaruan ambang batas dari web
       String resp = http.getString();
       if (resp.indexOf("\"mode\":\"manual\"") > 0) {
@@ -180,14 +180,17 @@ void processIrrigationLogic() {
       if (idxTemp > 0) {
         tempMaxLimit = resp.substring(idxTemp + 15).toFloat();
       }
+    } else {
+      Serial.printf("[HTTP ERROR] Gagal mengirim ke %s | Error: %s\n",
+                    nodeServerUrl, http.errorToString(code).c_str());
     }
     http.end();
   }
 
-  // Logging ke Serial Monitor Wokwi
+  // Logging ke Serial Monitor Wokwi / Hardware
   Serial.printf(
-      "Tanah: %d%% | RH: %.1f%% | Suhu: %.1f°C | Baterai: %.2fV (%d%%) | Pompa: %s | Mode: %s%s\n",
-      soilMoisture, airHumidity, airTemp, batteryVoltage, batteryPercent,
+      "Tanah: %d%% | RH: %.1f%% | Udara: %.1f°C | Air Nutrisi: %.1f°C | Baterai: %.2fV (%d%%) | Pompa: %s | Mode: %s%s\n",
+      soilMoisture, airHumidity, airTemp, waterTemp, batteryVoltage, batteryPercent,
       triggerPump ? "MENYIRAM (ON)" : "MATI (OFF)",
       manualOverrideActive ? (manualPumpTarget ? "MANUAL-ON" : "MANUAL-OFF")
                            : "AUTO",
@@ -199,17 +202,11 @@ void setup() {
   pinMode(PIN_RELAY, OUTPUT);
   digitalWrite(PIN_RELAY, LOW);
 
-  // Inisialisasi Layar LCD
-  Wire.begin(21, 22);
-  lcd.init();
-  lcd.backlight();
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Smart Hydroponic");
-  lcd.setCursor(0, 1);
-  lcd.print("System Starting.");
-
+  pinMode(PIN_DHT, INPUT_PULLUP);
   dht.begin();
+  pinMode(PIN_DS18B20, INPUT_PULLUP);
+  ds18b20.begin();
+  Serial.println("[INFO] Sensor Suhu Air DS18B20 diinisialisasi pada GPIO 4.");
 
   // Cek koneksi Blynk atau Wi-Fi Wokwi langsung
   if (String(auth) != "Masukan_Token_Blynk_Anda" &&
@@ -221,6 +218,18 @@ void setup() {
     Serial.println(
         "[INFO] Menghubungkan ke Wi-Fi Wokwi untuk Web Dashboard Node.js...");
     WiFi.begin(ssid, pass);
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+      delay(300);
+      Serial.print(".");
+      attempts++;
+    }
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\n[INFO] Wi-Fi Wokwi Terhubung!");
+      Serial.printf("[INFO] Target Web Dashboard: %s\n", nodeServerUrl);
+    } else {
+      Serial.println("\n[WARN] Menunggu koneksi Wi-Fi...");
+    }
   }
 
   delay(1000);

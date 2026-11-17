@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // SCROLL-SPY (Sorot Link Navigasi Otomatis Saat Menggulir)
   // ==========================================================================
   const sections = document.querySelectorAll('.page-section-block');
-  const navLinks = document.querySelectorAll('.nav-tab-btn');
+  const navLinks = document.querySelectorAll('.nav-tab-btn, .mobile-nav-btn');
 
   function onScrollSpy() {
     let currentSectionId = 'overview';
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', onScrollSpy, { passive: true });
   onScrollSpy();
 
-  // Smooth scroll handler
+  // Smooth scroll handler dengan offset header sticky yang nyaman
   navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
       const targetId = link.getAttribute('href');
@@ -109,7 +109,13 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const targetElem = document.querySelector(targetId);
         if (targetElem) {
-          targetElem.scrollIntoView({ behavior: 'smooth' });
+          const headerOffset = window.innerWidth <= 768 ? 64 : 72;
+          const elementPosition = targetElem.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
         }
       }
     });
@@ -182,9 +188,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (barSoilOverview) barSoilOverview.style.width = `${Math.min(100, Math.max(0, soil))}%`;
     if (elSoilMetrics) elSoilMetrics.textContent = `${soilStr}%`;
 
-    // Suhu Udara
+    // Suhu Udara (DHT22)
     const temp = Number(currentTelemetry.airTemp);
-    if (elTempOverview) elTempOverview.textContent = isNaN(temp) ? '24.2' : temp.toFixed(1);
+    const tempStr = isNaN(temp) ? '24.2' : temp.toFixed(1);
+    if (elTempOverview) elTempOverview.textContent = tempStr;
+    const elAirTempMetrics = document.getElementById('val-air-temp-metrics');
+    if (elAirTempMetrics) elAirTempMetrics.textContent = `${tempStr}°C`;
+
+    // Suhu Air Nutrisi (DS18B20 Waterproof)
+    const wTemp = Number(currentTelemetry.waterTemp !== undefined ? currentTelemetry.waterTemp : currentTelemetry.airTemp);
+    const wTempStr = isNaN(wTemp) ? '24.8' : wTemp.toFixed(1);
+    const elWaterTempOverview = document.getElementById('val-water-temp-overview');
+    if (elWaterTempOverview) elWaterTempOverview.textContent = `${wTempStr}°C`;
+    const elWaterTempMetrics = document.getElementById('val-water-temp-metrics');
+    if (elWaterTempMetrics) elWaterTempMetrics.textContent = `${wTempStr}°C`;
 
     // Kelembapan Udara
     const hum = Number(currentTelemetry.airHumidity);
@@ -418,6 +435,12 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(vercelPollingInterval);
         vercelPollingInterval = null;
       }
+      if (serverPill) {
+        serverPill.innerHTML = `
+          <span class="dot-indicator dot-green"></span>
+          <span>Server <strong style="color: var(--brand-emerald);">Aktif</strong></span>
+        `;
+      }
       addTerminalLog({ source: 'JARINGAN', level: 'SIAP', message: 'Koneksi Socket terhubung dengan Gateway Hidroponik.' });
     });
 
@@ -434,9 +457,40 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.state && data.state.thresholds && typeof updateThresholdsUI === 'function') {
         updateThresholdsUI(data.state.thresholds);
       }
+      const isLive = !!data.isHardwareLive || (data.state && data.state.lastHardwarePing && (Date.now() - data.state.lastHardwarePing < 20000));
+      if (vercelPill) {
+        if (isLive) {
+          vercelPill.innerHTML = `
+            <span class="dot-indicator dot-green"></span>
+            <span>ESP32 <strong style="color: var(--brand-emerald);">Live</strong></span>
+          `;
+          if (simStateText) {
+            simStateText.textContent = 'Hardware';
+            simStateText.style.color = 'var(--brand-emerald)';
+          }
+        } else {
+          vercelPill.innerHTML = `
+            <span class="dot-indicator dot-yellow"></span>
+            <span>ESP32 <strong style="color: #f59e0b;">Siaga</strong></span>
+          `;
+        }
+      }
       if (data.logs && Array.isArray(data.logs)) {
         terminalStream.innerHTML = '';
         data.logs.forEach(l => addTerminalLog(l));
+      }
+    });
+
+    socket.on('hardware_status', (hw) => {
+      if (vercelPill) {
+        vercelPill.innerHTML = `
+          <span class="dot-indicator dot-green"></span>
+          <span>ESP32 <strong style="color: var(--brand-emerald);">Live</strong></span>
+        `;
+      }
+      if (simStateText) {
+        simStateText.textContent = 'Hardware';
+        simStateText.style.color = 'var(--brand-emerald)';
       }
     });
 
@@ -479,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
           time: new Date().toLocaleTimeString(),
           soilMoisture: +(68.4 + Math.sin(simStep * 0.3) * 1.5).toFixed(1),
           airTemp: +(24.2 + Math.cos(simStep * 0.2) * 0.8).toFixed(1),
+          waterTemp: +(23.8 + Math.sin(simStep * 0.15) * 1.2).toFixed(1),
           airHumidity: +(68.2 + Math.sin(simStep * 0.4) * 2.5).toFixed(1),
           pumpStatus: currentTelemetry.pumpStatus,
           batteryVoltage: 12.6,
@@ -1126,9 +1181,13 @@ document.addEventListener('DOMContentLoaded', () => {
         radialBloom.style.transform = `translate(${bloomX.toFixed(1)}px, ${bloomY.toFixed(1)}px)`;
       }
 
-      // Sinkronisasi Orientasi Tunas 3D WebGL (Three.js)
+      // Hitung skala panggung kubus responsif (selaras dengan CSS @media query mobile)
+      const stageScale = window.innerWidth <= 480 ? 0.72 : (window.innerWidth <= 768 ? 0.80 : 1.0);
+      const combinedScale = stageScale * pressScale;
+
+      // Sinkronisasi Orientasi & Skala Tunas 3D WebGL (Three.js)
       if (window.Sprout3D && window.Sprout3D.isReady) {
-        window.Sprout3D.updateTransform(currentRotX, currentRotY, bobY);
+        window.Sprout3D.updateTransform(currentRotX, currentRotY, bobY, combinedScale);
       }
 
       requestAnimationFrame(renderCubeFrame);
@@ -1273,8 +1332,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCubePumpUI(!!currentTelemetry.pumpStatus);
   }
 
-  // Nav Tab Active State & ScrollSpy
-  const navTabs = document.querySelectorAll('.nav-tab-btn');
+  // Nav Tab Active State & ScrollSpy (Desktop Header & Mobile Bottom Bar)
+  const navTabs = document.querySelectorAll('.nav-tab-btn, .mobile-nav-btn');
   navTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       navTabs.forEach(t => t.classList.remove('active'));

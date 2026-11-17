@@ -2476,30 +2476,123 @@ body {
 }
 
 /* ==========================================================================
+   MOBILE BOTTOM NAVIGATION BAR (Navigasi Kaca Ponsel Modern)
+   ========================================================================== */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .main-viewport {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid var(--border-card);
+    box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 0.5rem;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  [data-theme="dark"] .mobile-bottom-nav {
+    background: rgba(13, 20, 16, 0.92);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -4px 28px rgba(0, 0, 0, 0.45);
+  }
+
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1;
+    height: 100%;
+    color: var(--text-subtle);
+    text-decoration: none;
+    font-size: 0.68rem;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    padding: 6px 0 4px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-nav-icon {
+    stroke: currentColor;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.2s ease, filter 0.2s ease;
+  }
+
+  .mobile-nav-btn:active {
+    transform: scale(0.92);
+  }
+
+  .mobile-nav-btn.active {
+    color: var(--brand-emerald);
+    font-weight: 700;
+  }
+
+  .mobile-nav-btn.active .mobile-nav-icon {
+    stroke: var(--brand-emerald);
+    transform: translateY(-2px);
+    filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.45));
+  }
+
+  .mobile-nav-btn.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--brand-emerald);
+    box-shadow: 0 0 10px var(--brand-emerald);
+  }
+}
+
+/* ==========================================================================
    GLOBAL MOBILE RESPONSIVE SUITE (< 768px & < 480px)
    ========================================================================== */
 @media (max-width: 768px) {
   html, body {
     overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   .main-viewport {
-    padding: 1.5rem 1rem 3rem;
+    padding: 1.25rem 0.85rem calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .hero-modal-container {
-    padding: 0 0.5rem;
+    padding: 0 0.25rem;
   }
 
   .hero-modal-title {
-    font-size: clamp(1.85rem, 6.5vw, 2.75rem);
+    font-size: clamp(1.75rem, 6.2vw, 2.5rem);
     line-height: 1.15;
   }
 
   .hero-modal-subhead {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     line-height: 1.6;
-    margin: 1.25rem auto 2rem;
+    margin: 1rem auto 1.75rem;
     padding: 0 0.5rem;
   }
 
@@ -2507,12 +2600,13 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 3.75rem;
+    margin-bottom: 2.5rem;
     width: 100%;
   }
 
   .cube-stage-3d {
-    transform: scale(0.72) !important;
+    transform: scale(0.80) !important;
+    transform-origin: center center;
   }
 
   .btn-modal-lime-pill,
@@ -2526,18 +2620,22 @@ body {
 
   .modal-metrics-proof-strip {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    padding: 1.25rem 1rem;
-    margin-bottom: 2.5rem;
+    gap: 0.75rem;
+    padding: 1rem 0.75rem;
+    margin-bottom: 2.25rem;
   }
 
   .proof-metric-number {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
+  }
+
+  .proof-metric-label {
+    font-size: 0.68rem;
   }
 
   .stat-cards-row-4 {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.85rem;
   }
 
   .view-header-row {
@@ -2547,7 +2645,11 @@ body {
   }
 
   .view-headline {
-    font-size: 1.45rem;
+    font-size: 1.35rem;
+  }
+
+  .view-subhead {
+    font-size: 0.82rem;
   }
 
   .panel-header-line {
@@ -2558,32 +2660,41 @@ body {
 
   .view-mode-pill-tabs {
     align-self: flex-start;
+    overflow-x: auto;
+    max-width: 100%;
   }
 
   .mesh-table-wrapper {
-    padding: 1rem 0.75rem;
+    padding: 0.85rem 0.65rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
+  .mesh-table {
+    min-width: 580px;
+  }
+
   .mesh-table th,
   .mesh-table td {
-    padding: 0.75rem 0.65rem;
+    padding: 0.7rem 0.6rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .terminal-stream-inner {
+    padding: 1rem 0.75rem;
     font-size: 0.75rem;
   }
 
-  .terminal-window-inner {
-    padding: 1rem;
-  }
-
   .figma-navbar {
-    height: 64px;
+    height: 60px;
   }
 
   .navbar-container {
-    padding: 0 1rem;
+    padding: 0 0.85rem;
     display: flex;
     justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .nav-tab-list {
@@ -2591,46 +2702,132 @@ body {
   }
 
   .brand-logo-img {
-    height: 44px;
-    max-width: 55px;
+    height: 40px;
+    max-width: 50px;
   }
 
   .brand-main-title {
-    font-size: 1.0rem;
+    font-size: 0.95rem;
   }
 
   .brand-sub-badge {
-    font-size: 0.54rem;
+    font-size: 0.52rem;
+  }
+
+  .figma-footer {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1.75rem 0 2.5rem;
   }
 }
 
 @media (max-width: 480px) {
   .hero-modal-title {
-    font-size: 1.7rem;
+    font-size: 1.65rem;
+  }
+
+  .cube-stage-3d {
+    transform: scale(0.72) !important;
+    transform-origin: center center;
   }
 
   .modal-metrics-proof-strip {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+    padding: 0.85rem 0.6rem;
+  }
+
+  .proof-metric-number {
+    font-size: 1.25rem;
   }
 
   .pill-status-dot span:not(.dot-indicator) {
-    display: none;
+    display: none !important;
   }
 
   .pill-status-dot {
-    padding: 0.35rem;
+    padding: 0;
     width: 28px;
     height: 28px;
     justify-content: center;
+    align-items: center;
   }
 
   .toggle-switch-compact {
-    padding: 0.3rem 0.5rem;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    justify-content: center;
+    align-items: center;
+    border-radius: var(--radius-pill);
   }
 
-  .toggle-switch-compact span:not(#theme-icon) {
-    font-size: 0.68rem;
+  #sim-state-text {
+    display: none !important;
+  }
+
+  #theme-icon span {
+    display: none !important;
+  }
+
+  .nav-actions-right {
+    gap: 0.35rem;
+  }
+
+  .navbar-container {
+    padding: 0 0.65rem;
+  }
+
+  .brand-group {
+    gap: 0.45rem;
+  }
+
+  .brand-logo-img {
+    height: 36px;
+    max-width: 44px;
+  }
+
+  .brand-main-title {
+    font-size: 0.88rem;
+  }
+
+  .brand-sub-badge {
+    font-size: 0.48rem;
+  }
+
+  .preset-pills-container {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.35rem;
+  }
+
+  .preset-pills-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .btn-preset-pill {
+    flex-shrink: 0;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.72rem;
+  }
+
+  .threshold-studio-card {
+    padding: 1rem 0.75rem;
+  }
+
+  .modern-range-slider::-webkit-slider-thumb {
+    width: 26px;
+    height: 26px;
+  }
+
+  .modern-range-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
   }
 }
 

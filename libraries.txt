@@ -6,3 +6,5 @@ DHT sensor library
 Blynk
 Adafruit Unified Sensor
 LiquidCrystal I2C
+OneWire
+DallasTemperature
