@@ -110,23 +110,46 @@ void processIrrigationLogic() {
   }
 
   // 2. Baca Sensor Kelembapan Tanah (ADC ESP32: 0 - 4095 di GPIO 34)
-  int rawSoil = analogRead(PIN_SOIL_POT);
-  int soilMoisture = 0;
+  // Multi-sampling 20 sampel dengan jeda mikro untuk meredam noise & fluktuasi ADC
+  long sumSoil = 0;
+  for (int i = 0; i < 20; i++) {
+    sumSoil += analogRead(PIN_SOIL_POT);
+    delay(2);
+  }
+  int rawSoil = (int)(sumSoil / 20);
+
   // Kalibrasi Sensor Tanah Berdasarkan Karakteristik Fisik:
-  // - Di udara bebas (kering total): ADC ~3460 -> 0%
-  // - Dicelup ke dalam air (sangat basah): ADC ~3160 -> 100%
-  const int SOIL_DRY_ADC = 3460;
-  const int SOIL_WET_ADC = 3160;
+  // - Di udara bebas (kering total): ADC ~3500 -> 0%
+  // - Dicelup ke dalam air (sangat basah): ADC ~3100 -> 100%
+  const int SOIL_DRY_ADC = 3500;
+  const int SOIL_WET_ADC = 3100;
+  int instantMoisture = 0;
   if (rawSoil >= SOIL_DRY_ADC) {
-    soilMoisture = 0;
+    instantMoisture = 0;
   } else if (rawSoil <= SOIL_WET_ADC) {
-    soilMoisture = 100;
+    instantMoisture = 100;
   } else {
-    // Rentang aktif responsif
-    soilMoisture = constrain(map(rawSoil, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100), 0, 100);
+    // Rentang aktif proporsional
+    instantMoisture = constrain(map(rawSoil, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100), 0, 100);
   }
 
-  int rawBattery = analogRead(PIN_BATTERY_POT);
+  // Filter Pelembut Eksponensial (EMA / Low-Pass Filter) untuk mencegah lonjakan nilai fluktuatif
+  static float filteredSoil = -1.0;
+  if (filteredSoil < 0) {
+    filteredSoil = instantMoisture;
+  } else {
+    // Bobot: 65% nilai lama + 35% nilai baru agar pergerakan halus, stabil, dan tidak melompat-lompat
+    filteredSoil = (filteredSoil * 0.65f) + (instantMoisture * 0.35f);
+  }
+  int soilMoisture = round(filteredSoil);
+
+  // Multi-sampling tegangan baterai untuk stabilitas
+  long sumBattery = 0;
+  for (int i = 0; i < 10; i++) {
+    sumBattery += analogRead(PIN_BATTERY_POT);
+    delay(1);
+  }
+  int rawBattery = (int)(sumBattery / 10);
   // Kalibrasi tegangan baterai aki 12V (rentang 10.0V - 14.5V)
   // Pembagi tegangan R1=30k & R2=7.5k memetakan tegangan 0-14.8V ke 0-3.3V ADC
   // ESP32
