@@ -28,6 +28,21 @@ const char *nodeServerUrl =
 #define PIN_BATTERY_POT                                                        \
   35 // Pin ADC untuk monitoring tegangan baterai/solar via voltage divider
 #define PIN_RELAY 2
+
+// Konfigurasi Logika Modul Relay:
+// Mayoritas modul relay ESP32/Arduino (misal modul relay Songle 1-channel optocoupler)
+// beroperasi dengan logika ACTIVE-LOW:
+// - LOW (0V)  : Relay AKTIF (Kontak NO terhubung -> Pompa MENYALA)
+// - HIGH (3.3V): Relay MATI (Kontak NO terbuka -> Pompa MATI)
+#define RELAY_ACTIVE_LOW true
+
+#if RELAY_ACTIVE_LOW
+  #define RELAY_ON  LOW
+  #define RELAY_OFF HIGH
+#else
+  #define RELAY_ON  HIGH
+  #define RELAY_OFF LOW
+#endif
 #define PIN_DS18B20 4 // Pin Data 1-Wire DS18B20 Waterproof (Suhu Air Nutrisi)
 
 int activeDhtPin = 15;
@@ -110,7 +125,8 @@ void processIrrigationLogic() {
   }
 
   // 2. Baca Sensor Kelembapan Tanah (ADC ESP32: 0 - 4095 di GPIO 34)
-  // Multi-sampling 20 sampel dengan jeda mikro untuk meredam noise & fluktuasi ADC
+  // Multi-sampling 20 sampel dengan jeda mikro untuk meredam noise & fluktuasi
+  // ADC
   long sumSoil = 0;
   for (int i = 0; i < 20; i++) {
     sumSoil += analogRead(PIN_SOIL_POT);
@@ -130,15 +146,18 @@ void processIrrigationLogic() {
     instantMoisture = 100;
   } else {
     // Rentang aktif proporsional
-    instantMoisture = constrain(map(rawSoil, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100), 0, 100);
+    instantMoisture =
+        constrain(map(rawSoil, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100), 0, 100);
   }
 
-  // Filter Pelembut Eksponensial (EMA / Low-Pass Filter) untuk mencegah lonjakan nilai fluktuatif
+  // Filter Pelembut Eksponensial (EMA / Low-Pass Filter) untuk mencegah
+  // lonjakan nilai fluktuatif
   static float filteredSoil = -1.0;
   if (filteredSoil < 0) {
     filteredSoil = instantMoisture;
   } else {
-    // Bobot: 65% nilai lama + 35% nilai baru agar pergerakan halus, stabil, dan tidak melompat-lompat
+    // Bobot: 65% nilai lama + 35% nilai baru agar pergerakan halus, stabil, dan
+    // tidak melompat-lompat
     filteredSoil = (filteredSoil * 0.65f) + (instantMoisture * 0.35f);
   }
   int soilMoisture = round(filteredSoil);
@@ -209,11 +228,11 @@ void processIrrigationLogic() {
 
   // 5. Eksekusi Aktuator Pompa (Relay)
   if (triggerPump) {
-    digitalWrite(PIN_RELAY, HIGH); // Pompa MENYALA
+    digitalWrite(PIN_RELAY, RELAY_ON); // Pompa MENYALA
     if (isBlynkActive)
       Blynk.virtualWrite(V3, 255);
   } else {
-    digitalWrite(PIN_RELAY, LOW); // Pompa MATI
+    digitalWrite(PIN_RELAY, RELAY_OFF); // Pompa MATI
     if (isBlynkActive)
       Blynk.virtualWrite(V3, 0);
   }
@@ -250,10 +269,10 @@ void processIrrigationLogic() {
         manualOverrideActive = true;
         if (resp.indexOf("\"pumpTarget\":true") > 0) {
           manualPumpTarget = true;
-          digitalWrite(PIN_RELAY, HIGH);
+          digitalWrite(PIN_RELAY, RELAY_ON);
         } else {
           manualPumpTarget = false;
-          digitalWrite(PIN_RELAY, LOW);
+          digitalWrite(PIN_RELAY, RELAY_OFF);
         }
       } else if (resp.indexOf("\"mode\":\"auto\"") > 0) {
         manualOverrideActive = false;
@@ -301,7 +320,7 @@ void processIrrigationLogic() {
 void setup() {
   Serial.begin(115200);
   pinMode(PIN_RELAY, OUTPUT);
-  digitalWrite(PIN_RELAY, LOW);
+  digitalWrite(PIN_RELAY, RELAY_OFF);
 
   pinMode(activeDhtPin, INPUT_PULLUP);
   dht.begin();

@@ -18,28 +18,47 @@ char ssid[] = "Wokwi-GUEST";
 char pass[] = "";
 
 // URL Gateway Web Dashboard Node.js
-// - Jika di Wokwi for VS Code / Wokwi IoT Gateway: gunakan "http://host.wokwi.internal:3000/api/telemetry" atau IP laptop
+// - Jika di Wokwi for VS Code / Wokwi IoT Gateway: gunakan
+// "http://host.wokwi.internal:3000/api/telemetry" atau IP laptop
 // - IP Laptop Anda saat ini: "http://10.70.86.183:3000/api/telemetry"
 const char *nodeServerUrl = "http://10.70.86.183:3000/api/telemetry";
 
 #define PIN_SOIL_POT 34
-#define PIN_BATTERY_POT 35 // Pin ADC untuk monitoring tegangan baterai/solar via voltage divider
+#define PIN_BATTERY_POT                                                        \
+  35 // Pin ADC untuk monitoring tegangan baterai/solar via voltage divider
 #define PIN_DHT 15
 #define DHTTYPE DHT22
 #define PIN_RELAY 2
-#define PIN_DS18B20 4      // Pin Data 1-Wire Sensor Suhu Air Waterproof DS18B20
+
+// Konfigurasi Logika Modul Relay:
+// Mayoritas modul relay ESP32/Arduino (misal modul relay Songle 1-channel optocoupler)
+// beroperasi dengan logika ACTIVE-LOW:
+// - LOW (0V)  : Relay AKTIF (Kontak NO terhubung -> Pompa MENYALA)
+// - HIGH (3.3V): Relay MATI (Kontak NO terbuka -> Pompa MATI)
+#define RELAY_ACTIVE_LOW true
+
+#if RELAY_ACTIVE_LOW
+  #define RELAY_ON  LOW
+  #define RELAY_OFF HIGH
+#else
+  #define RELAY_ON  HIGH
+  #define RELAY_OFF LOW
+#endif
+#define PIN_DS18B20 4 // Pin Data 1-Wire Sensor Suhu Air Waterproof DS18B20
 
 DHT dht(PIN_DHT, DHTTYPE);
 OneWire oneWire(PIN_DS18B20);
 DallasTemperature ds18b20(&oneWire);
 BlynkTimer timer;
 
-// Ambang Batas Prioritas Kelembapan Tanah, Udara, Suhu & Baterai (Dapat dikonfigurasi via Web)
-int soilSafeLimit = 50;        // Batas Aman: Jika tanah >= 50%, pompa WAJIB MATI
-int soilCriticalLimit = 35;    // Batas Kritis: Jika tanah < 35%, wajib siram
-float airHumDryLimit = 60.0;   // Udara kering jika RH < 60%
-float tempMaxLimit = 31.0;     // Batas Suhu Panas jika Suhu >= 31°C
-const int BATTERY_CUTOFF_LIMIT = 15;  // Batas Kritis Baterai (< 15% kunci pompa agar aki awet)
+// Ambang Batas Prioritas Kelembapan Tanah, Udara, Suhu & Baterai (Dapat
+// dikonfigurasi via Web)
+int soilSafeLimit = 50;      // Batas Aman: Jika tanah >= 50%, pompa WAJIB MATI
+int soilCriticalLimit = 35;  // Batas Kritis: Jika tanah < 35%, wajib siram
+float airHumDryLimit = 60.0; // Udara kering jika RH < 60%
+float tempMaxLimit = 31.0;   // Batas Suhu Panas jika Suhu >= 31°C
+const int BATTERY_CUTOFF_LIMIT =
+    15; // Batas Kritis Baterai (< 15% kunci pompa agar aki awet)
 
 bool isBlynkActive = false;
 bool manualOverrideActive = false;
@@ -54,13 +73,16 @@ void processIrrigationLogic() {
   ds18b20.requestTemperatures();
   float waterTemp = ds18b20.getTempCByIndex(0);
   // Validasi nilai pembacaan DS18B20 (DEVICE_DISCONNECTED_C = -127°C)
-  bool waterSensorValid = (waterTemp != DEVICE_DISCONNECTED_C && waterTemp > -40.0 && waterTemp < 85.0);
+  bool waterSensorValid = (waterTemp != DEVICE_DISCONNECTED_C &&
+                           waterTemp > -40.0 && waterTemp < 85.0);
   if (!waterSensorValid) {
-    waterTemp = airTemp; // Fallback ke suhu udara jika sensor fisik belum tersambung
+    waterTemp =
+        airTemp; // Fallback ke suhu udara jika sensor fisik belum tersambung
   }
 
   // 2. Baca Sensor Kelembapan Tanah (ADC ESP32: 0 - 4095 di GPIO 34)
-  // Multi-sampling 20 sampel dengan jeda mikro untuk meredam noise & fluktuasi ADC
+  // Multi-sampling 20 sampel dengan jeda mikro untuk meredam noise & fluktuasi
+  // ADC
   long sumSoil = 0;
   for (int i = 0; i < 20; i++) {
     sumSoil += analogRead(PIN_SOIL_POT);
@@ -79,10 +101,12 @@ void processIrrigationLogic() {
   } else if (rawSoil <= SOIL_WET_ADC) {
     instantMoisture = 100;
   } else {
-    instantMoisture = constrain(map(rawSoil, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100), 0, 100);
+    instantMoisture =
+        constrain(map(rawSoil, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100), 0, 100);
   }
 
-  // Filter Pelembut Eksponensial (EMA / Low-Pass Filter) untuk mencegah lonjakan nilai fluktuatif
+  // Filter Pelembut Eksponensial (EMA / Low-Pass Filter) untuk mencegah
+  // lonjakan nilai fluktuatif
   static float filteredSoil = -1.0;
   if (filteredSoil < 0) {
     filteredSoil = instantMoisture;
@@ -99,10 +123,14 @@ void processIrrigationLogic() {
   }
   int rawBattery = (int)(sumBattery / 10);
   // Kalibrasi tegangan baterai aki 12V (rentang 10.0V - 14.5V)
-  // Pembagi tegangan R1=30k & R2=7.5k memetakan tegangan 0-14.8V ke 0-3.3V ADC ESP32
+  // Pembagi tegangan R1=30k & R2=7.5k memetakan tegangan 0-14.8V ke 0-3.3V ADC
+  // ESP32
   float batteryVoltage = (rawBattery / 4095.0) * 14.5;
-  if (batteryVoltage < 0.5) batteryVoltage = 12.4; // Default fallback jika pin mengambang saat tanpa kabel
-  int batteryPercent = constrain((int)((batteryVoltage - 11.0) / (12.7 - 11.0) * 100.0), 0, 100);
+  if (batteryVoltage < 0.5)
+    batteryVoltage =
+        12.4; // Default fallback jika pin mengambang saat tanpa kabel
+  int batteryPercent =
+      constrain((int)((batteryVoltage - 11.0) / (12.7 - 11.0) * 100.0), 0, 100);
 
   if (isnan(airHumidity) || isnan(airTemp)) {
     Serial.println("[ERROR] Pembacaan DHT22 gagal!");
@@ -128,10 +156,12 @@ void processIrrigationLogic() {
     // Mode Otomatis: Prioritas kelembapan tanah, udara, dan suhu
     if (soilMoisture < soilSafeLimit) {
       if (soilMoisture < soilCriticalLimit) {
-        // Kondisi A: Tanah sangat kering kritis (< soilCriticalLimit), langsung siram
+        // Kondisi A: Tanah sangat kering kritis (< soilCriticalLimit), langsung
+        // siram
         triggerPump = true;
       } else if (airHumidity < airHumDryLimit) {
-        // Kondisi B: Tanah mulai kering (< soilSafeLimit) DAN udara juga kering (< airHumDryLimit)
+        // Kondisi B: Tanah mulai kering (< soilSafeLimit) DAN udara juga kering
+        // (< airHumDryLimit)
         triggerPump = true;
       } else if (airTemp >= tempMaxLimit) {
         // Kondisi C: Suhu lingkungan melampaui batas panas (>= tempMaxLimit)
@@ -148,11 +178,11 @@ void processIrrigationLogic() {
 
   // 5. Eksekusi Aktuator Pompa (Relay)
   if (triggerPump) {
-    digitalWrite(PIN_RELAY, HIGH); // Pompa MENYALA
+    digitalWrite(PIN_RELAY, RELAY_ON); // Pompa MENYALA
     if (isBlynkActive)
       Blynk.virtualWrite(V3, 255);
   } else {
-    digitalWrite(PIN_RELAY, LOW); // Pompa MATI
+    digitalWrite(PIN_RELAY, RELAY_OFF); // Pompa MATI
     if (isBlynkActive)
       Blynk.virtualWrite(V3, 0);
   }
@@ -175,16 +205,17 @@ void processIrrigationLogic() {
     int code = http.POST(json);
     if (code > 0) {
       Serial.printf("[HTTP %d] Telemetri terkirim ke Web Dashboard!\n", code);
-      // Server membalas instruksi jika ada override manual atau pembaruan ambang batas dari web
+      // Server membalas instruksi jika ada override manual atau pembaruan
+      // ambang batas dari web
       String resp = http.getString();
       if (resp.indexOf("\"mode\":\"manual\"") > 0) {
         manualOverrideActive = true;
         if (resp.indexOf("\"pumpTarget\":true") > 0) {
           manualPumpTarget = true;
-          digitalWrite(PIN_RELAY, HIGH);
+          digitalWrite(PIN_RELAY, RELAY_ON);
         } else {
           manualPumpTarget = false;
-          digitalWrite(PIN_RELAY, LOW);
+          digitalWrite(PIN_RELAY, RELAY_OFF);
         }
       } else if (resp.indexOf("\"mode\":\"auto\"") > 0) {
         manualOverrideActive = false;
@@ -215,19 +246,20 @@ void processIrrigationLogic() {
   }
 
   // Logging ke Serial Monitor Wokwi / Hardware
-  Serial.printf(
-      "Tanah: %d%% | RH: %.1f%% | Udara: %.1f°C | Air Nutrisi: %.1f°C | Baterai: %.2fV (%d%%) | Pompa: %s | Mode: %s%s\n",
-      soilMoisture, airHumidity, airTemp, waterTemp, batteryVoltage, batteryPercent,
-      triggerPump ? "MENYIRAM (ON)" : "MATI (OFF)",
-      manualOverrideActive ? (manualPumpTarget ? "MANUAL-ON" : "MANUAL-OFF")
-                           : "AUTO",
-      lowBatteryCutoff ? " [LOW BATTERY LOCK]" : "");
+  Serial.printf("Tanah: %d%% | RH: %.1f%% | Udara: %.1f°C | Air Nutrisi: "
+                "%.1f°C | Baterai: %.2fV (%d%%) | Pompa: %s | Mode: %s%s\n",
+                soilMoisture, airHumidity, airTemp, waterTemp, batteryVoltage,
+                batteryPercent, triggerPump ? "MENYIRAM (ON)" : "MATI (OFF)",
+                manualOverrideActive
+                    ? (manualPumpTarget ? "MANUAL-ON" : "MANUAL-OFF")
+                    : "AUTO",
+                lowBatteryCutoff ? " [LOW BATTERY LOCK]" : "");
 }
 
 void setup() {
   Serial.begin(115200);
   pinMode(PIN_RELAY, OUTPUT);
-  digitalWrite(PIN_RELAY, LOW);
+  digitalWrite(PIN_RELAY, RELAY_OFF);
 
   pinMode(PIN_DHT, INPUT_PULLUP);
   dht.begin();
