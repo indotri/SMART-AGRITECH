@@ -62,10 +62,17 @@ void processIrrigationLogic() {
   // 2. Baca Sensor Kelembapan Tanah (ADC ESP32: 0 - 4095 di GPIO 34)
   int rawSoil = analogRead(PIN_SOIL_POT);
   int soilMoisture = 0;
-  if (rawSoil > 1000 && rawSoil < 3900) {
-    soilMoisture = constrain(map(rawSoil, 3200, 1300, 0, 100), 0, 100);
+  // Kalibrasi Sensor Tanah Berdasarkan Karakteristik Fisik:
+  // - Di udara bebas (kering total): ADC ~3460 -> 0%
+  // - Dicelup ke dalam air (sangat basah): ADC ~3160 -> 100%
+  const int SOIL_DRY_ADC = 3460;
+  const int SOIL_WET_ADC = 3160;
+  if (rawSoil >= SOIL_DRY_ADC) {
+    soilMoisture = 0;
+  } else if (rawSoil <= SOIL_WET_ADC) {
+    soilMoisture = 100;
   } else {
-    soilMoisture = constrain(map(rawSoil, 0, 4095, 0, 100), 0, 100);
+    soilMoisture = constrain(map(rawSoil, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100), 0, 100);
   }
 
   int rawBattery = analogRead(PIN_BATTERY_POT);
@@ -77,8 +84,6 @@ void processIrrigationLogic() {
 
   if (isnan(airHumidity) || isnan(airTemp)) {
     Serial.println("[ERROR] Pembacaan DHT22 gagal!");
-    lcd.setCursor(0, 0);
-    lcd.print("Sensor Error!   ");
     return;
   }
 

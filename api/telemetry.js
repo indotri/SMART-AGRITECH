@@ -5,6 +5,7 @@ globalThis.__telemetryState = globalThis.__telemetryState || {
   telemetry: {
     soilMoisture: 45,
     airTemp: 28.5,
+    waterTemp: 25.0,
     airHumidity: 60.0,
     pumpStatus: false,
     batteryVoltage: 12.6,
@@ -137,9 +138,12 @@ module.exports = (req, res) => {
         evaluatedPump = state.pumpTarget;
       }
 
+      const wTemp = body.waterTemp !== undefined ? Number(body.waterTemp) : temp;
+
       state.telemetry = {
         soilMoisture: soil,
         airTemp: temp,
+        waterTemp: wTemp,
         airHumidity: hum,
         pumpStatus: evaluatedPump,
         batteryVoltage: batVolt,

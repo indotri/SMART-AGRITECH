@@ -251,6 +251,15 @@ app.post('/api/telemetry', (req, res) => {
   // Catat rekaman telemetri ke logger harian Excel
   excelLogger.record(state.telemetry, state.mode);
 
+  // Teruskan (Relay) data sensor fisik secara asynchronous ke Vercel Cloud
+  try {
+    fetch('https://smart-agritech-iot.vercel.app/api/telemetry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.telemetry)
+    }).catch(() => {});
+  } catch (e) {}
+
   res.json({
     success: true,
     pumpTarget: evaluatedPump,

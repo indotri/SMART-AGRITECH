@@ -13,13 +13,16 @@
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
 
-// Wi-Fi Kredensial (ESP32 dan Laptop WAJIB terhubung ke Hotspot / Wi-Fi yang SAMA)
+// Wi-Fi Kredensial (ESP32 dan Laptop WAJIB terhubung ke Hotspot / Wi-Fi yang
+// SAMA)
 char auth[] = BLYNK_AUTH_TOKEN;
 char ssid[] = "indosus";
 char pass[] = "12344321";
 
-// URL Gateway Web Dashboard Node.js (IP Laptop di Wi-Fi saat ini: 10.70.86.183)
-const char *nodeServerUrl = "http://10.70.86.183:3000/api/telemetry";
+// URL Gateway Web Dashboard Vercel Cloud (Serverless API Publik - Dapat diakses
+// dari mana saja)
+const char *nodeServerUrl =
+    "https://smart-agritech-iot.vercel.app/api/telemetry";
 
 #define PIN_SOIL_POT 34
 #define PIN_BATTERY_POT                                                        \
@@ -98,21 +101,29 @@ void processIrrigationLogic() {
                            waterTemp > -40.0 && waterTemp < 85.0);
   bool dhtOk = (!isnan(airHumidity) && !isnan(airTemp));
   if (!waterSensorValid) {
-    waterTemp = dhtOk ? airTemp : 25.0; // Fallback jika sensor fisik belum dicolok
-    Serial.printf("[PERINGATAN DS18B20] Sensor air di GPIO %d belum terbaca (Code -127). Pastikan kabel Data ke GPIO 4 & pasang resistor pull-up 4.7k!\n", PIN_DS18B20);
+    waterTemp =
+        dhtOk ? airTemp : 25.0; // Fallback jika sensor fisik belum dicolok
+    Serial.printf(
+        "[PERINGATAN DS18B20] Sensor air di GPIO %d belum terbaca (Code -127). "
+        "Pastikan kabel Data ke GPIO 4 & pasang resistor pull-up 4.7k!\n",
+        PIN_DS18B20);
   }
 
   // 2. Baca Sensor Kelembapan Tanah (ADC ESP32: 0 - 4095 di GPIO 34)
   int rawSoil = analogRead(PIN_SOIL_POT);
   int soilMoisture = 0;
-  // Sensor tanah fisik kapasitif/resistif: Udara kering = ADC tinggi (~3000-3500), Air basah = ADC rendah (~1200-1600)
-  // Jika di simulator Wokwi (Potensiometer biasa 0-4095): 0=Kering, 4095=Basah
-  if (rawSoil > 1000 && rawSoil < 3900) {
-    // Sensor fisik: semakin basah (ADC turun), persen naik
-    soilMoisture = constrain(map(rawSoil, 3200, 1300, 0, 100), 0, 100);
+  // Kalibrasi Sensor Tanah Berdasarkan Karakteristik Fisik:
+  // - Di udara bebas (kering total): ADC ~3460 -> 0%
+  // - Dicelup ke dalam air (sangat basah): ADC ~3160 -> 100%
+  const int SOIL_DRY_ADC = 3460;
+  const int SOIL_WET_ADC = 3160;
+  if (rawSoil >= SOIL_DRY_ADC) {
+    soilMoisture = 0;
+  } else if (rawSoil <= SOIL_WET_ADC) {
+    soilMoisture = 100;
   } else {
-    // Potensiometer biasa / nilai batas
-    soilMoisture = constrain(map(rawSoil, 0, 4095, 0, 100), 0, 100);
+    // Rentang aktif responsif
+    soilMoisture = constrain(map(rawSoil, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100), 0, 100);
   }
 
   int rawBattery = analogRead(PIN_BATTERY_POT);
@@ -127,7 +138,9 @@ void processIrrigationLogic() {
       constrain((int)((batteryVoltage - 11.0) / (12.7 - 11.0) * 100.0), 0, 100);
 
   if (!dhtOk) {
-    Serial.printf("[PERINGATAN DHT] Sensor DHT di GPIO %d belum terbaca. Cek pin data DHT!\n", activeDhtPin);
+    Serial.printf("[PERINGATAN DHT] Sensor DHT di GPIO %d belum terbaca. Cek "
+                  "pin data DHT!\n",
+                  activeDhtPin);
     airHumidity = 60.0;
     airTemp = 27.0;
   }
@@ -253,7 +266,8 @@ void processIrrigationLogic() {
 
   // Logging ke Serial Monitor
   Serial.printf(
-      "Tanah: %d%% (ADC: %d) | Udara: %.1f°C | Air (DS18B20): %.1f°C | RH: %.1f%% | Bat: %.2fV (%d%%) | Pompa: %s | Mode: %s%s\n",
+      "Tanah: %d%% (ADC: %d) | Udara: %.1f°C | Air (DS18B20): %.1f°C | RH: "
+      "%.1f%% | Bat: %.2fV (%d%%) | Pompa: %s | Mode: %s%s\n",
       soilMoisture, rawSoil, airTemp, waterTemp, airHumidity, batteryVoltage,
       batteryPercent, triggerPump ? "MENYIRAM (ON)" : "MATI (OFF)",
       manualOverrideActive ? (manualPumpTarget ? "MANUAL-ON" : "MANUAL-OFF")
@@ -270,7 +284,8 @@ void setup() {
   dht.begin();
   pinMode(PIN_DS18B20, INPUT_PULLUP);
   ds18b20.begin();
-  Serial.println("[INFO] Sensor Suhu Air DS18B20 diinisialisasi pada GPIO 4 (Pullup Aktif).");
+  Serial.println("[INFO] Sensor Suhu Air DS18B20 diinisialisasi pada GPIO 4 "
+                 "(Pullup Aktif).");
 
   // Cek koneksi Blynk atau Wi-Fi langsung
   if (String(auth) != "Masukan_Token_Blynk_Anda" &&
@@ -288,7 +303,8 @@ void setup() {
       Serial.print(".");
       attempts++;
     }
-    // Jika tidak terhubung ke hotspot (misalnya sedang dijalankan di simulator Wokwi), coba Wokwi-GUEST
+    // Jika tidak terhubung ke hotspot (misalnya sedang dijalankan di simulator
+    // Wokwi), coba Wokwi-GUEST
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("\n[INFO] Mencoba Wi-Fi Simulator Wokwi-GUEST...");
       WiFi.begin("Wokwi-GUEST", "");
@@ -303,10 +319,12 @@ void setup() {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("\n[INFO] Wi-Fi Berhasil Terhubung!");
       Serial.printf("[INFO] SSID      : %s\n", WiFi.SSID().c_str());
-      Serial.printf("[INFO] IP ESP32  : %s\n", WiFi.localIP().toString().c_str());
+      Serial.printf("[INFO] IP ESP32  : %s\n",
+                    WiFi.localIP().toString().c_str());
       Serial.printf("[INFO] Target Web: %s\n", nodeServerUrl);
     } else {
-      Serial.println("\n[WARN] Belum berhasil terhubung ke Wi-Fi. Cek kembali SSID & Password!");
+      Serial.println("\n[WARN] Belum berhasil terhubung ke Wi-Fi. Cek kembali "
+                     "SSID & Password!");
     }
   }
 
