@@ -31,10 +31,10 @@ const char *nodeServerUrl = "http://10.70.86.183:3000/api/telemetry";
 #define PIN_RELAY 27
 
 // Konfigurasi Logika Modul Relay:
-// Modul relay fisik Anda adalah tipe ACTIVE-LOW (terverifikasi dari foto: sinyal LOW menyalakan indikator hijau).
-// - LOW  (0V)  : Relay AKTIF / MENYALA (Lampu Hijau MENYALA -> Kontak NO terhubung -> Pompa MENYALA)
-// - HIGH (3.3V): Relay NONAKTIF / MATI (Lampu Hijau PADAM   -> Kontak NO terbuka   -> Pompa MATI)
-#define RELAY_ACTIVE_LOW true
+// Modul relay fisik Anda adalah tipe ACTIVE-HIGH:
+// - HIGH (3.3V): Relay AKTIF / MENYALA (Lampu Hijau MENYALA -> Kontak NO terhubung -> Pompa MENYALA)
+// - LOW  (0V)  : Relay NONAKTIF / MATI (Lampu Hijau PADAM   -> Kontak NO terbuka   -> Pompa MATI)
+#define RELAY_ACTIVE_LOW false
 
 #if RELAY_ACTIVE_LOW
 #define RELAY_ON LOW
@@ -169,7 +169,7 @@ void processIrrigationLogic() {
     }
   }
 
-  // Proteksi Deep Discharge Aki: Kunci pompa jika baterai < 15%
+  // Proteksi Deep Discharge Aki: Kunci pompa jika baterai < 15% di Mode Otomatis
   bool lowBatteryCutoff = (batteryPercent < BATTERY_CUTOFF_LIMIT);
   if (lowBatteryCutoff) {
     triggerPump = false;
