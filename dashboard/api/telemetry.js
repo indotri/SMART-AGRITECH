@@ -73,13 +73,14 @@ module.exports = (req, res) => {
     body = body || {};
 
     // 1. Kasus A: Kontrol dari Web Dashboard (Manual Pump, Mode, Thresholds)
-    if (body.action) {
-      if (body.action === 'set_pump') {
+    if (body.action || body.mode) {
+      if (body.action === 'set_pump' || body.action === 'on' || body.action === 'off') {
         state.mode = 'manual';
-        state.pumpTarget = !!body.status;
-        state.telemetry.pumpStatus = state.pumpTarget;
-      } else if (body.action === 'set_mode') {
-        state.mode = body.mode === 'manual' ? 'manual' : 'auto';
+        const target = (body.action === 'on') ? true : (body.action === 'off') ? false : !!body.status;
+        state.pumpTarget = target;
+        state.telemetry.pumpStatus = target;
+      } else if (body.action === 'set_mode' || body.mode) {
+        state.mode = (body.mode === 'manual' || body.mode === 'manual_bypass') ? 'manual' : 'auto';
         if (state.mode === 'auto') {
           state.telemetry.pumpStatus = evaluateIrrigation(
             state.telemetry.soilMoisture,

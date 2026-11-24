@@ -341,6 +341,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateThresholdsUI(data.thresholds);
       }
 
+      if (data.mode && typeof updateSystemModeUI === 'function') {
+        updateSystemModeUI(data.mode);
+      }
+
       if (serverPill) {
         serverPill.innerHTML = `
           <span class="dot-indicator dot-green"></span>
@@ -550,31 +554,138 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // KONTROL POMPA AIR & PENGHENTIAN DARURAT
+  // KONTROL POMPA AIR & MODE SISTEM (OTOMATIS VS MANUAL BYPASS)
   // ==========================================================================
+  let currentSystemMode = 'auto'; // 'auto' | 'manual'
+
+  async function handleSetMode(targetMode) {
+    currentSystemMode = targetMode === 'manual' ? 'manual' : 'auto';
+    updateSystemModeUI(currentSystemMode);
+
+    if (socket && socket.connected) {
+      socket.emit('set_mode', currentSystemMode);
+    }
+
+    try {
+      await fetch('/api/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_mode', mode: currentSystemMode })
+      });
+    } catch (e) {
+      console.error(e);
+    }
+
+    addTerminalLog({
+      source: 'SISTEM',
+      level: 'MODE',
+      message: currentSystemMode === 'manual'
+        ? 'Mode Manual Diaktifkan: Kontrol pompa mandiri bebas dari sensor!'
+        : 'Mode Otomatis Cerdas Diaktifkan: Pompa dikontrol oleh sensor kelembapan & suhu.'
+    });
+  }
+
+  function updateSystemModeUI(mode) {
+    currentSystemMode = mode || 'auto';
+    const btnModeAuto = document.getElementById('btn-mode-auto');
+    const btnModeManual = document.getElementById('btn-mode-manual');
+    const toggleSysBtn = document.getElementById('toggle-system-mode-btn');
+    const sysModeTitle = document.getElementById('system-mode-title');
+    const pumpModeDesc = document.getElementById('pump-mode-desc');
+
+    if (btnModeAuto && btnModeManual) {
+      if (currentSystemMode === 'manual') {
+        btnModeAuto.classList.remove('active');
+        btnModeAuto.style.background = 'transparent';
+        btnModeAuto.style.color = 'var(--text-muted)';
+        btnModeManual.classList.add('active');
+        btnModeManual.style.background = 'var(--brand-emerald)';
+        btnModeManual.style.color = '#ffffff';
+        if (pumpModeDesc) {
+          pumpModeDesc.innerHTML = '<strong style="color: #f59e0b;">Mode Manual Aktif:</strong> Pompa dikontrol bebas langsung via tombol di bawah tanpa terikat sensor kelembapan.';
+        }
+      } else {
+        btnModeAuto.classList.add('active');
+        btnModeAuto.style.background = 'var(--brand-emerald)';
+        btnModeAuto.style.color = '#ffffff';
+        btnModeManual.classList.remove('active');
+        btnModeManual.style.background = 'transparent';
+        btnModeManual.style.color = 'var(--text-muted)';
+        if (pumpModeDesc) {
+          pumpModeDesc.innerHTML = 'Pompa air otomatis menyala saat tanah kering dan otomatis mati saat kelembapan optimal tercapai.';
+        }
+      }
+    }
+
+    if (toggleSysBtn) {
+      if (currentSystemMode === 'manual') {
+        toggleSysBtn.className = 'badge-pill-amber';
+        toggleSysBtn.textContent = 'MANUAL';
+        if (sysModeTitle) sysModeTitle.textContent = 'Mode Manual (Bypass)';
+      } else {
+        toggleSysBtn.className = 'badge-pill-green';
+        toggleSysBtn.textContent = 'OTOMATIS';
+        if (sysModeTitle) sysModeTitle.textContent = 'Mode Otomatis Cerdas';
+      }
+    }
+  }
+
   async function handlePumpToggle(targetState) {
+    // Menekan tombol pompa otomatis mengaktifkan mode manual
+    currentSystemMode = 'manual';
+    updateSystemModeUI('manual');
+
     currentTelemetry.pumpStatus = targetState;
     updateTelemetryUI({ pumpStatus: targetState });
 
     if (socket && socket.connected) {
       socket.emit('set_pump', { status: targetState });
       socket.emit('setPump', targetState);
-    } else {
-      try {
-        await fetch('/api/pump', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: targetState ? 'on' : 'off', mode: 'manual' })
-        });
-      } catch (e) {
-        console.error(e);
-      }
+    }
+
+    // Selalu kirim ke /api/telemetry agar sinkron di Vercel Cloud Serverless
+    try {
+      await fetch('/api/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_pump', status: targetState })
+      });
+    } catch (e) {
+      console.error(e);
     }
 
     addTerminalLog({
       source: 'KONTROL',
       level: 'PERINTAH',
-      message: `Status Pompa Nutrisi Diubah: ${targetState ? 'MENYALA (ON)' : 'DIMATIKAN (OFF)'}`
+      message: `Status Pompa Nutrisi Diubah (Manual): ${targetState ? 'MENYALA (ON)' : 'DIMATIKAN (OFF)'}`
+    });
+  }
+
+  // Event Listeners Kontrol Pompa & Mode
+  const btnModeAuto = document.getElementById('btn-mode-auto');
+  if (btnModeAuto) {
+    btnModeAuto.addEventListener('click', () => handleSetMode('auto'));
+  }
+
+  const btnModeManual = document.getElementById('btn-mode-manual');
+  if (btnModeManual) {
+    btnModeManual.addEventListener('click', () => handleSetMode('manual'));
+  }
+
+  const btnPumpOn = document.getElementById('btn-pump-on');
+  if (btnPumpOn) {
+    btnPumpOn.addEventListener('click', () => handlePumpToggle(true));
+  }
+
+  const btnPumpOff = document.getElementById('btn-pump-off');
+  if (btnPumpOff) {
+    btnPumpOff.addEventListener('click', () => handlePumpToggle(false));
+  }
+
+  const toggleSysModeBtn = document.getElementById('toggle-system-mode-btn');
+  if (toggleSysModeBtn) {
+    toggleSysModeBtn.addEventListener('click', () => {
+      handleSetMode(currentSystemMode === 'auto' ? 'manual' : 'auto');
     });
   }
 

@@ -1908,11 +1908,11 @@
                   </svg>
                 </div>
                 <div>
-                  <div class="quick-bus-name">Mode Otomatis Cerdas</div>
+                  <div class="quick-bus-name" id="system-mode-title">Mode Otomatis Cerdas</div>
                   <div class="quick-bus-status" id="overview-auto-rule-text">Siram &lt; 35% | Stop &gt;= 50%</div>
                 </div>
               </div>
-              <span class="badge-pill-green">AKTIF</span>
+              <button class="badge-pill-green" id="toggle-system-mode-btn" style="cursor: pointer; border: 1px solid currentColor;" title="Klik untuk beralih antara Mode Otomatis &amp; Manual">OTOMATIS</button>
             </div>
 
             <!-- Proteksi Aki -->
@@ -2515,13 +2515,35 @@
             <div style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem;" id="pump-state-text">
               STANDBY (MATI)
             </div>
-            <p style="font-size: 0.75rem; color: var(--text-muted); max-width: 320px; margin-bottom: 1.25rem;">
+            <p style="font-size: 0.75rem; color: var(--text-muted); max-width: 340px; margin-bottom: 1rem; text-align: center;" id="pump-mode-desc">
               Pompa air otomatis menyala saat tanah kering dan otomatis mati saat kelembapan optimal tercapai.
             </p>
 
+            <!-- Mode Selector: Otomatis vs Manual (Bypass Sensor) -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; width: 100%; max-width: 340px; justify-content: center;">
+              <button id="btn-mode-auto" class="nav-tab-btn active" style="flex: 1; padding: 0.5rem 0.75rem; font-size: 0.8rem; border-radius: var(--radius-pill); cursor: pointer; text-align: center; border: 1px solid var(--border-card);">
+                🤖 Mode Otomatis
+              </button>
+              <button id="btn-mode-manual" class="nav-tab-btn" style="flex: 1; padding: 0.5rem 0.75rem; font-size: 0.8rem; border-radius: var(--radius-pill); cursor: pointer; text-align: center; border: 1px solid var(--border-card);">
+                ✋ Mode Manual
+              </button>
+            </div>
+
+            <!-- Tombol Aksi Manual Langsung (ON / OFF) -->
+            <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; width: 100%; max-width: 340px;">
+              <button id="btn-pump-on" style="flex: 1; padding: 0.65rem 0.75rem; background: var(--brand-emerald); color: white; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Nyalakan Pompa
+              </button>
+              <button id="btn-pump-off" style="flex: 1; padding: 0.65rem 0.75rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="6" width="12" height="12"></rect></svg>
+                Matikan Pompa
+              </button>
+            </div>
+
             <div
               style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.25rem; background: var(--bg-card); border-radius: var(--radius-pill); border: 1px solid var(--border-card); box-shadow: var(--shadow-sm);">
-              <span style="font-size: 0.85rem; font-weight: 700;">Kendali Manual:</span>
+              <span style="font-size: 0.85rem; font-weight: 700;">Saklar Relay:</span>
               <label class="ios-switch">
                 <input type="checkbox" id="main-pump-toggle">
                 <span class="switch-slider"></span>
