@@ -31,18 +31,17 @@ const char *nodeServerUrl = "http://10.70.86.183:3000/api/telemetry";
 #define PIN_RELAY 2
 
 // Konfigurasi Logika Modul Relay:
-// Mayoritas modul relay ESP32/Arduino (misal modul relay Songle 1-channel optocoupler)
-// beroperasi dengan logika ACTIVE-LOW:
-// - LOW (0V)  : Relay AKTIF (Kontak NO terhubung -> Pompa MENYALA)
-// - HIGH (3.3V): Relay MATI (Kontak NO terbuka -> Pompa MATI)
-#define RELAY_ACTIVE_LOW true
+// Modul relay fisik Anda beroperasi dengan logika ACTIVE-HIGH:
+// - HIGH (3.3V): Relay AKTIF / MENYALA (Kontak NO terhubung -> Pompa MENYALA)
+// - LOW  (0V)  : Relay NONAKTIF / MATI (Kontak NO terbuka -> Pompa MATI)
+#define RELAY_ACTIVE_LOW false
 
 #if RELAY_ACTIVE_LOW
-  #define RELAY_ON  LOW
-  #define RELAY_OFF HIGH
+#define RELAY_ON LOW
+#define RELAY_OFF HIGH
 #else
-  #define RELAY_ON  HIGH
-  #define RELAY_OFF LOW
+#define RELAY_ON HIGH
+#define RELAY_OFF LOW
 #endif
 #define PIN_DS18B20 4 // Pin Data 1-Wire Sensor Suhu Air Waterproof DS18B20
 

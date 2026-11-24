@@ -30,11 +30,10 @@ const char *nodeServerUrl =
 #define PIN_RELAY 2
 
 // Konfigurasi Logika Modul Relay:
-// Mayoritas modul relay ESP32/Arduino (misal modul relay Songle 1-channel optocoupler)
-// beroperasi dengan logika ACTIVE-LOW:
-// - LOW (0V)  : Relay AKTIF (Kontak NO terhubung -> Pompa MENYALA)
-// - HIGH (3.3V): Relay MATI (Kontak NO terbuka -> Pompa MATI)
-#define RELAY_ACTIVE_LOW true
+// Modul relay fisik Anda beroperasi dengan logika ACTIVE-HIGH:
+// - HIGH (3.3V): Relay AKTIF / MENYALA (Kontak NO terhubung -> Pompa MENYALA)
+// - LOW  (0V)  : Relay NONAKTIF / MATI (Kontak NO terbuka -> Pompa MATI)
+#define RELAY_ACTIVE_LOW false
 
 #if RELAY_ACTIVE_LOW
   #define RELAY_ON  LOW
@@ -309,9 +308,10 @@ void processIrrigationLogic() {
   // Logging ke Serial Monitor
   Serial.printf(
       "Tanah: %d%% (ADC: %d) | Udara: %.1f°C | Air (DS18B20): %.1f°C | RH: "
-      "%.1f%% | Bat: %.2fV (%d%%) | Pompa: %s | Mode: %s%s\n",
+      "%.1f%% | Bat: %.2fV (%d%%) | Pompa: %s (Pin D%d: %s) | Mode: %s%s\n",
       soilMoisture, rawSoil, airTemp, waterTemp, airHumidity, batteryVoltage,
       batteryPercent, triggerPump ? "MENYIRAM (ON)" : "MATI (OFF)",
+      PIN_RELAY, (triggerPump ? "HIGH" : "LOW"),
       manualOverrideActive ? (manualPumpTarget ? "MANUAL-ON" : "MANUAL-OFF")
                            : "AUTO",
       lowBatteryCutoff ? " [LOW BATTERY LOCK]" : "");
