@@ -28,7 +28,7 @@ const char *nodeServerUrl = "http://10.70.86.183:3000/api/telemetry";
   35 // Pin ADC untuk monitoring tegangan baterai/solar via voltage divider
 #define PIN_DHT 15
 #define DHTTYPE DHT22
-#define PIN_RELAY 2
+#define PIN_RELAY 27
 
 // Konfigurasi Logika Modul Relay:
 // Modul relay fisik Anda adalah tipe ACTIVE-LOW (terverifikasi dari foto: sinyal LOW menyalakan indikator hijau).

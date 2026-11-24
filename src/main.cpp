@@ -27,7 +27,7 @@ const char *nodeServerUrl =
 #define PIN_SOIL_POT 34
 #define PIN_BATTERY_POT                                                        \
   35 // Pin ADC untuk monitoring tegangan baterai/solar via voltage divider
-#define PIN_RELAY 2
+#define PIN_RELAY 27
 
 // Konfigurasi Logika Modul Relay:
 // Modul relay fisik Anda adalah tipe ACTIVE-LOW (terverifikasi dari foto: sinyal LOW menyalakan indikator hijau).
@@ -49,7 +49,7 @@ DHT dht(activeDhtPin, DHT22);
 OneWire oneWire(PIN_DS18B20);
 DallasTemperature ds18b20(&oneWire);
 
-const int scanPins[] = {15, 13, 14, 27, 16, 17, 5, 18, 19, 23, 12};
+const int scanPins[] = {15, 13, 14, 16, 17, 5, 18, 19, 23, 12};
 const int numScanPins = sizeof(scanPins) / sizeof(scanPins[0]);
 BlynkTimer timer;
 
@@ -68,7 +68,7 @@ bool manualPumpTarget = false;
 
 void processIrrigationLogic() {
   // 1. Baca data sensor lingkungan
-  const int pinsToTry[] = {15, 13, 14, 27, 23, 18, 19};
+  const int pinsToTry[] = {15, 13, 14, 23, 18, 19};
   float airHumidity = dht.readHumidity(true);
   float airTemp = dht.readTemperature(false, true);
 
